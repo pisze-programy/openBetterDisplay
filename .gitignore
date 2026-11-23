@@ -1,0 +1,16 @@
+# Build & SwiftPM
+.build/
+.swiftpm/
+.derived/
+DerivedData/
+dist/
+
+# Xcode user state
+*.xcuserdata/
+*.xcworkspace/xcuserdata/
+xcuserdata/
+
+# macOS
+.DS_Store
+*.swp
+*~
