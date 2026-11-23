@@ -1,0 +1,80 @@
+name: openBetterDisplay
+options:
+  bundleIdPrefix: com.piszeprogramy
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    DEVELOPMENT_TEAM: 3UKH2QRFKZ
+    CODE_SIGN_STYLE: Automatic
+    ARCHS: arm64
+
+targets:
+  OpenBetterDisplayCore:
+    type: framework
+    platform: macOS
+    sources:
+      - path: Sources/OpenBetterDisplayCore
+    dependencies:
+      - sdk: Cocoa.framework
+      - sdk: CoreGraphics.framework
+      - sdk: CoreAudio.framework
+      - sdk: IOKit.framework
+      - sdk: Carbon.framework
+      - sdk: ServiceManagement.framework
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.piszeprogramy.openbetterdisplay.core
+        MACH_O_TYPE: staticlib
+        SKIP_INSTALL: YES
+
+  openBetterDisplay:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources/openBetterDisplay
+      - path: Resources
+        excludes:
+          - Info.plist
+          - openBetterDisplay.entitlements
+    dependencies:
+      - target: OpenBetterDisplayCore
+        embed: false
+    settings:
+      base:
+        PRODUCT_NAME: openBetterDisplay
+        PRODUCT_BUNDLE_IDENTIFIER: com.piszeprogramy.openbetterdisplay
+        INFOPLIST_FILE: Resources/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: Resources/openBetterDisplay.entitlements
+        ENABLE_HARDENED_RUNTIME: YES
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1"
+
+  openBetterDisplayTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests/openBetterDisplayTests
+    dependencies:
+      - target: OpenBetterDisplayCore
+        embed: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.piszeprogramy.openbetterdisplay.tests
+        GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  openBetterDisplay:
+    build:
+      targets:
+        openBetterDisplay: all
+        openBetterDisplayTests: [test]
+    run:
+      config: Debug
+    test:
+      targets:
+        - openBetterDisplayTests
