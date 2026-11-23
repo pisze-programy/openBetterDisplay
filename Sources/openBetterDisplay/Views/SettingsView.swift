@@ -4,19 +4,30 @@ import OpenBetterDisplayCore
 /// 5-tab Settings window content (SPEC §4.2), ~640×500pt.
 struct SettingsView: View {
     @ObservedObject var controller: AppController
+    @State private var selectedTab: Int
+
+    init(controller: AppController, initialTab: Int = 0) {
+        self.controller = controller
+        self._selectedTab = State(initialValue: (0...4).contains(initialTab) ? initialTab : 0)
+    }
 
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             GeneralSettingsView(controller: controller)
                 .tabItem { Label("General", systemImage: "gearshape") }
+                .tag(0)
             ProfilesSettingsView(controller: controller)
                 .tabItem { Label("Displays & Profiles", systemImage: "display.2") }
+                .tag(1)
             NightShiftSettingsView(controller: controller)
                 .tabItem { Label("Night Shift", systemImage: "moon.stars") }
+                .tag(2)
             ShortcutsSettingsView(controller: controller)
                 .tabItem { Label("Shortcuts", systemImage: "keyboard") }
+                .tag(3)
             DiagnosticsSettingsView(controller: controller)
                 .tabItem { Label("Diagnostics", systemImage: "stethoscope") }
+                .tag(4)
         }
         .frame(width: 640, height: 500)
     }

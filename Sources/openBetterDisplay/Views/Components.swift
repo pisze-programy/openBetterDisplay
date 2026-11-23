@@ -34,18 +34,22 @@ struct Pill: View {
     let text: String
     var color: Color = .secondary
     var systemImage: String? = nil
+    var minWidth: CGFloat? = nil
 
     var body: some View {
         HStack(spacing: 3) {
             if let systemImage {
                 Image(systemName: systemImage).font(.system(size: 8, weight: .bold))
             }
-            Text(text)
+            Text(verbatim: text)
+                .monospacedDigit()
+                .lineLimit(1)
         }
         .font(.system(size: 10, weight: .semibold, design: .rounded))
         .foregroundStyle(color)
         .padding(.horizontal, 6)
         .padding(.vertical, 2)
+        .frame(minWidth: minWidth)
         .background(Capsule(style: .continuous).fill(color.opacity(0.15)))
         .fixedSize()
     }
@@ -95,6 +99,7 @@ struct SliderHeader: View {
             Spacer(minLength: 4)
             trailing()
         }
+        .frame(height: 18)
     }
 }
 

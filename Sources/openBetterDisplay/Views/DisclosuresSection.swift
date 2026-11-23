@@ -5,11 +5,12 @@ import OpenBetterDisplayCore
 struct DisclosuresSection: View {
     @ObservedObject var controller: AppController
     let display: DisplayInfo
+    var expandModeDisclosure: Bool = false
 
     var body: some View {
         GlassCard(padding: 4) {
             VStack(spacing: 0) {
-                DisplayModeDisclosure(controller: controller, display: display)
+                DisplayModeDisclosure(controller: controller, display: display, initialExpanded: expandModeDisclosure)
                 divider
                 if !display.isBuiltIn {
                     InputSourceDisclosure(controller: controller, display: display)
@@ -32,7 +33,21 @@ private struct Disclosure<Content: View>: View {
     let systemImage: String
     var detail: String? = nil
     @ViewBuilder var content: () -> Content
-    @State private var expanded = false
+    @State private var expanded: Bool
+
+    init(
+        title: String,
+        systemImage: String,
+        detail: String? = nil,
+        initialExpanded: Bool = false,
+        @ViewBuilder content: @escaping () -> Content
+    ) {
+        self.title = title
+        self.systemImage = systemImage
+        self.detail = detail
+        self.content = content
+        self._expanded = State(initialValue: initialExpanded)
+    }
 
     var body: some View {
         DisclosureGroup(isExpanded: $expanded) {
@@ -45,20 +60,28 @@ private struct Disclosure<Content: View>: View {
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .frame(width: 18)
-                Text(title).font(.system(size: 12.5))
+                Text(title)
+                    .font(.system(size: 12.5))
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
                 Spacer(minLength: 4)
-                if let detail, !expanded {
-                    Text(detail)
+                if let detail {
+                    Text(verbatim: detail)
                         .font(.system(size: 10.5, design: .rounded))
+                        .monospacedDigit()
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
+                        .truncationMode(.tail)
+                        .opacity(expanded ? 0 : 1)
+                        .transaction { tx in tx.animation = nil }
                 }
             }
+            .frame(height: 28)
             .contentShape(Rectangle())
             .onTapGesture { withAnimation(.easeInOut(duration: 0.15)) { expanded.toggle() } }
         }
         .padding(.horizontal, 8)
-        .padding(.vertical, 6)
+        .padding(.vertical, 2)
     }
 }
 
@@ -78,14 +101,22 @@ private struct ChoiceRow: View {
                     .foregroundStyle(Color.accentColor)
                     .opacity(isSelected ? 1 : 0)
                     .frame(width: 12)
-                Text(title).font(.system(size: 12))
+                Text(verbatim: title)
+                    .font(.system(size: 12))
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .truncationMode(.tail)
                 if let subtitle {
-                    Text(subtitle).font(.system(size: 10.5)).foregroundStyle(.secondary)
+                    Text(verbatim: subtitle)
+                        .font(.system(size: 10.5))
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 6)
-            .padding(.vertical, 4)
+            .frame(height: 26)
             .background(RoundedRectangle(cornerRadius: 5)
                 .fill(isSelected ? Color.accentColor.opacity(0.12) : Color.primary.opacity(hovering ? 0.07 : 0)))
             .contentShape(Rectangle())
@@ -93,6 +124,7 @@ private struct ChoiceRow: View {
         .buttonStyle(.plain)
         .disabled(!isEnabled)
         .onHover { hovering = $0 }
+        .transaction { tx in tx.animation = nil }
     }
 }
 
@@ -101,6 +133,7 @@ private struct ChoiceRow: View {
 private struct DisplayModeDisclosure: View {
     @ObservedObject var controller: AppController
     let display: DisplayInfo
+    var initialExpanded: Bool = false
 
     private var sortedModes: [DisplayModeInfo] {
         display.availableModes.sorted { lhs, rhs in
@@ -115,7 +148,8 @@ private struct DisplayModeDisclosure: View {
         Disclosure(
             title: "Display Mode",
             systemImage: "rectangle.on.rectangle",
-            detail: display.currentMode.map(ModeFormat.compactSummary)
+            detail: display.currentMode.map(ModeFormat.compactSummary),
+            initialExpanded: initialExpanded
         ) {
             if sortedModes.isEmpty {
                 Text("No modes reported").font(.system(size: 11)).foregroundStyle(.secondary)

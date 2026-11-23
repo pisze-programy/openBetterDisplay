@@ -7,8 +7,8 @@ import OpenBetterDisplayCore
 final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     static let contentSize = NSSize(width: 640, height: 500)
 
-    init(controller: AppController) {
-        let hosting = NSHostingController(rootView: SettingsView(controller: controller))
+    init(controller: AppController, initialTab: Int = 0) {
+        let hosting = NSHostingController(rootView: SettingsView(controller: controller, initialTab: initialTab))
         let window = NSWindow(contentViewController: hosting)
         window.title = "openBetterDisplay Settings"
         window.styleMask = [.titled, .closable, .miniaturizable]

@@ -46,7 +46,10 @@ struct ToggleRow: View {
                 .font(.system(size: 12))
                 .foregroundStyle(isOn ? Color.accentColor : Color.secondary)
                 .frame(width: 18)
-            Text(title).font(.system(size: 12.5))
+            Text(title)
+                .font(.system(size: 12.5))
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
             if let badge { badge }
             Spacer(minLength: 4)
             Toggle("", isOn: $isOn)
@@ -55,7 +58,7 @@ struct ToggleRow: View {
                 .labelsHidden()
         }
         .padding(.horizontal, 8)
-        .padding(.vertical, 6)
+        .frame(height: 32)
         .contentShape(Rectangle())
     }
 }
@@ -73,14 +76,17 @@ private struct ActionRow: View {
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .frame(width: 18)
-                Text(title).font(.system(size: 12.5))
+                Text(title)
+                    .font(.system(size: 12.5))
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
                 Spacer(minLength: 4)
                 Image(systemName: "chevron.right")
                     .font(.system(size: 9, weight: .semibold))
                     .foregroundStyle(.tertiary)
             }
             .padding(.horizontal, 8)
-            .padding(.vertical, 7)
+            .frame(height: 32)
             .background(RoundedRectangle(cornerRadius: 6).fill(Color.primary.opacity(hovering ? 0.07 : 0)))
             .contentShape(Rectangle())
         }
@@ -105,7 +111,8 @@ private struct NightShiftRow: View {
             return ("Active", .orange, "moon.fill")
         }
         if config.enabled && config.scheduleEnabled {
-            return ("Scheduled \(controller.nightShiftScheduleDescription)", .secondary, "clock")
+            let desc = controller.nightShiftScheduleDescription
+            return (desc.isEmpty ? "Scheduled" : desc, .secondary, "clock")
         }
         if config.enabled { return ("On", .orange, "moon.fill") }
         return ("Off", .secondary, nil)

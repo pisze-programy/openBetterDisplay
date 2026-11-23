@@ -10,7 +10,12 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
     private let statusItem: NSStatusItem
     private let popover = NSPopover()
 
-    init(controller: AppController, openSettings: @escaping () -> Void) {
+    init(
+        controller: AppController,
+        expandModeDisclosure: Bool = false,
+        showcaseClean: Bool = false,
+        openSettings: @escaping () -> Void
+    ) {
         self.controller = controller
         self.openSettings = openSettings
         self.statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -30,11 +35,14 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
             rootView: PopoverView(
                 controller: controller,
                 openSettings: { [weak self] in self?.openSettings() },
-                quit: { NSApp.terminate(nil) }
+                quit: { NSApp.terminate(nil) },
+                expandModeDisclosure: expandModeDisclosure,
+                showcaseClean: showcaseClean
             )
         )
         hosting.sizingOptions = [.preferredContentSize]
         popover.contentViewController = hosting
+        popover.contentSize = NSSize(width: PopoverView.width, height: 480)
         popover.behavior = .transient
         popover.animates = true
         popover.delegate = self

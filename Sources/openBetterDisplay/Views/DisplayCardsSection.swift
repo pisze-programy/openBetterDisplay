@@ -63,10 +63,13 @@ private struct DisplayCard: View {
                     if display.isMain { Pill(text: "M", color: .accentColor) }
                     if display.isHDREnabled { Pill(text: "HDR", color: .purple) }
                 }
-                Text(subtitle)
+                .frame(height: 18)
+                Text(verbatim: subtitle)
                     .font(.system(size: 11, design: .rounded))
+                    .monospacedDigit()
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+                    .frame(height: 14, alignment: .leading)
             }
 
             Spacer(minLength: 4)
@@ -90,7 +93,7 @@ private struct DisplayCard: View {
             }
         }
         .padding(10)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: 54, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(.ultraThinMaterial)

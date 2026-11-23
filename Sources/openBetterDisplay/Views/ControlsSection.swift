@@ -31,14 +31,20 @@ private struct BrightnessRow: View {
         VStack(alignment: .leading, spacing: 6) {
             SliderHeader("Brightness (Combined)", systemImage: "sun.max") {
                 HStack(spacing: 6) {
-                    if let method = controller.brightnessMethodByDisplay[display.id] {
-                        BrightnessMethodPill(method: method)
+                    ZStack(alignment: .trailing) {
+                        Color.clear.frame(width: 82, height: 18)
+                        if let method = controller.brightnessMethodByDisplay[display.id] {
+                            BrightnessMethodPill(method: method)
+                        }
                     }
-                    Text("\(Int((level * 100).rounded()))%")
+                    Text(verbatim: "\(Int((level * 100).rounded()))%")
                         .font(.system(size: 11.5, weight: .medium, design: .rounded))
                         .monospacedDigit()
+                        .lineLimit(1)
                         .foregroundStyle(.secondary)
+                        .frame(width: 38, alignment: .trailing)
                 }
+                .frame(height: 18)
             }
             HStack(spacing: 6) {
                 Image(systemName: "sun.min").font(.system(size: 10)).foregroundStyle(.secondary)
@@ -68,10 +74,12 @@ private struct VolumeRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             SliderHeader("Volume (Hardware)", systemImage: "speaker.wave.2") {
-                Text(isMuted ? "Muted" : "\(volume)")
+                Text(verbatim: isMuted ? "Muted" : "\(volume)%")
                     .font(.system(size: 11.5, weight: .medium, design: .rounded))
                     .monospacedDigit()
+                    .lineLimit(1)
                     .foregroundStyle(.secondary)
+                    .frame(width: 46, alignment: .trailing)
             }
             HStack(spacing: 6) {
                 Button {
@@ -164,16 +172,28 @@ private struct ResolutionRow: View {
             SliderHeader("Resolution", systemImage: "rectangle.expand.vertical") {
                 HStack(spacing: 5) {
                     if let tier = shownTier {
-                        if tier.isHiDPI { Pill(text: "HiDPI", color: .blue) }
+                        Pill(text: "HiDPI", color: .blue)
+                            .frame(width: 42, alignment: .trailing)
+                            .opacity(tier.isHiDPI ? 1 : 0)
+                            .accessibilityHidden(!tier.isHiDPI)
                         Text(verbatim: "\(tier.width) × \(tier.height)")
                             .font(.system(size: 11.5, weight: .medium, design: .rounded))
                             .monospacedDigit()
+                            .lineLimit(1)
                             .foregroundStyle(.secondary)
-                        if let rate { Pill(text: "@ \(ModeFormat.hz(rate))", color: .secondary) }
+                            .frame(minWidth: 82, alignment: .trailing)
+                        if let rate {
+                            Pill(text: "@ \(ModeFormat.hz(rate))", color: .secondary, minWidth: 54)
+                                .frame(minWidth: 54, alignment: .trailing)
+                        }
                     } else {
-                        Text("Unavailable").font(.system(size: 11)).foregroundStyle(.secondary)
+                        Text("Unavailable")
+                            .font(.system(size: 11))
+                            .lineLimit(1)
+                            .foregroundStyle(.secondary)
                     }
                 }
+                .frame(height: 18)
             }
             if tiers.count > 1 {
                 Slider(
@@ -182,7 +202,6 @@ private struct ResolutionRow: View {
                         set: { dragIndex = $0 }
                     ),
                     in: 0...Double(tiers.count - 1),
-                    step: 1,
                     onEditingChanged: { editing in
                         guard !editing else { return }
                         defer { dragIndex = nil }
