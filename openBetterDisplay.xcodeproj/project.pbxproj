@@ -8,8 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		009FF628C7F0761D8A09E84B /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2352A1094078E66CB1A84D76 /* IOKit.framework */; };
+		136F9D1A5CA4654ED5C79425 /* DiagnosticsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD3F61E30C504D7BEA5B1C86 /* DiagnosticsSettingsView.swift */; };
 		1BB6B5346FC1A1741EF7D285 /* CoreBrightnessBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 339C88EEB7651B6905E76F4F /* CoreBrightnessBridge.swift */; };
 		1DC4CAC2F7B67E487C556C9A /* SmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A090E89C3A12B7F126F21A5 /* SmokeTests.swift */; };
+		1DFCF5E8842E703948164CF8 /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F16D12E22675BC848A5988F7 /* GeneralSettingsView.swift */; };
+		2093D64B2295416F47F2C289 /* QuickTogglesSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F477660C96D44424894E73E /* QuickTogglesSection.swift */; };
 		23D5A52D22B019C90BB03E54 /* IOAVServiceBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 383A20444E3812FA6F306A63 /* IOAVServiceBridge.swift */; };
 		23D5B0CB031E448C3DF7C5D3 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 186694A9948EBB3CA147365D /* SettingsStore.swift */; };
 		26C10AB1001C543357AABB1C /* ProfileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 558634F7BCEB6271EF678400 /* ProfileStore.swift */; };
@@ -19,25 +22,37 @@
 		4E94DB0F585C8DB04424B437 /* GlobalShortcutManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C099228938363BF5DC77BD2 /* GlobalShortcutManager.swift */; };
 		5271C62A4E2A8FE224F2DA46 /* OpenBetterDisplayCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 05514321C195DBE4B80F573D /* OpenBetterDisplayCore.framework */; };
 		5B4F60DFFF44474382648731 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AE8936828281484F9BE72782 /* Cocoa.framework */; };
+		5F4918B9D45DC563717BED76 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC80F3776D72EB2636D48D99 /* AppDelegate.swift */; };
+		61ABB95B1C7B86DF4233489B /* MenuBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9511788E622F1F41492435EA /* MenuBarController.swift */; };
+		635DCAA476DEE97FCC209767 /* ShortcutsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCC0E021648C6F12AC170077 /* ShortcutsSettingsView.swift */; };
 		66AF98157CA302484C5237B7 /* DDCController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 025426F622F6F89672231602 /* DDCController.swift */; };
 		6884E90F5D2ED527CFDBBE8C /* FailsafeWatchdog.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBDCDC8864EBAE0674D611E9 /* FailsafeWatchdog.swift */; };
 		6A145540B99F5D40513066A4 /* ServiceManagement.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4C9929208F98E2EB0190B3F /* ServiceManagement.framework */; };
+		6C60FB09F6FB09E5FF4DB7B8 /* ProfilesSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84583BF040FAF6A344AF49B2 /* ProfilesSettingsView.swift */; };
 		7209B9BED6DF13882CDBBA03 /* OverlayManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D622BD918136F397B69504B /* OverlayManager.swift */; };
 		72AE9065FAACCA14D00C9C5A /* Protocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DF614F90E3C5FEBA2254232 /* Protocols.swift */; };
 		7587AD89023D070A4B6B86E1 /* OSDHUDController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 965EB5C264215E2AE8152ADE /* OSDHUDController.swift */; };
 		758DFA14D3F822F097753CF8 /* MediaKeyInterceptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B819F9AA1EDC398A69C80828 /* MediaKeyInterceptor.swift */; };
+		7D3F7423327D673BC93BBFF7 /* DisplayCardsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035A148A4786C8A207F6EF3F /* DisplayCardsSection.swift */; };
 		89F1A5FC88EC24350117BBBD /* AppController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02897AB580624A8D4B2CABAF /* AppController.swift */; };
+		8CA241C4D4CF921298447EFA /* ControlsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB483524876E4A7AAFEC7F28 /* ControlsSection.swift */; };
 		91BEFB8D6008E29AE056110B /* CoreDisplayBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D2B0785B034CB44FF19AE3B /* CoreDisplayBridge.swift */; };
 		92F4EE57EE72951F28EE0F21 /* OpenBetterDisplayCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 05514321C195DBE4B80F573D /* OpenBetterDisplayCore.framework */; };
+		96BA8FC0838CB972B2C52EE4 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBE51987BD9887F1EB73535D /* Components.swift */; };
 		98F3C6904662B4C8FF5C14D0 /* DisplayManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AB2CC245083BD56092690D9 /* DisplayManager.swift */; };
 		A466CE1EF73683195EBF9A7F /* LaunchAtLoginManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EB77B5BB5BC9FBE6B3FE42A /* LaunchAtLoginManager.swift */; };
 		B11D6197441A68CDDE85523B /* NightShiftScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7B9EA0FD788571E9B1FC39A /* NightShiftScheduler.swift */; };
 		B86FA614D53AA17401EB8AB8 /* CombinedBrightnessController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D66C8CC88C0C8F263E1C5513 /* CombinedBrightnessController.swift */; };
+		BED2C933C1FCD68F1CDD9128 /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8CA59B8040498B1ECAB6667 /* SettingsWindowController.swift */; };
 		C1DCE147F881830F9C15AB50 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D01B76D247E7C8FEE586EAFF /* CoreGraphics.framework */; };
+		D45B8F449608FA2030BD7B0A /* DisclosuresSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE1E170C9BBFE60C45D69712 /* DisclosuresSection.swift */; };
 		DD286ACF015D348855514EB1 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C868079F3C636D51AC598DE3 /* CoreAudio.framework */; };
 		E17E0CD3E910F3F6DB374698 /* openBetterDisplayApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7B12E1510DAE1CCE87B0F6C /* openBetterDisplayApp.swift */; };
 		E73DC52A9010BE603FC65EED /* SkyLightBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A92C6429D7651FFF7DA22E7 /* SkyLightBridge.swift */; };
 		E778F27DFB805C8F33B9F8BF /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5A56BF766F1DA7B5269B7B18 /* Carbon.framework */; };
+		F169942B6F155DA7DE1ACBE9 /* PopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FE2935200B7D0877A665983 /* PopoverView.swift */; };
+		F7CC49E85667084E199815B7 /* NightShiftSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E1F6AA968753E87876C4B05 /* NightShiftSettingsView.swift */; };
+		FAA65FBEA074C8DFB9966EDF /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDFFB2A83B1791AE57A5A07C /* SettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -60,6 +75,7 @@
 /* Begin PBXFileReference section */
 		025426F622F6F89672231602 /* DDCController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DDCController.swift; sourceTree = "<group>"; };
 		02897AB580624A8D4B2CABAF /* AppController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppController.swift; sourceTree = "<group>"; };
+		035A148A4786C8A207F6EF3F /* DisplayCardsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayCardsSection.swift; sourceTree = "<group>"; };
 		05514321C195DBE4B80F573D /* OpenBetterDisplayCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = OpenBetterDisplayCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		0BB0E5808C32E85E0B59E617 /* CoreAudioObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreAudioObserver.swift; sourceTree = "<group>"; };
 		0D2B0785B034CB44FF19AE3B /* CoreDisplayBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDisplayBridge.swift; sourceTree = "<group>"; };
@@ -67,6 +83,7 @@
 		186694A9948EBB3CA147365D /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
 		1C099228938363BF5DC77BD2 /* GlobalShortcutManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalShortcutManager.swift; sourceTree = "<group>"; };
 		2352A1094078E66CB1A84D76 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
+		2E1F6AA968753E87876C4B05 /* NightShiftSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightShiftSettingsView.swift; sourceTree = "<group>"; };
 		2EB77B5BB5BC9FBE6B3FE42A /* LaunchAtLoginManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginManager.swift; sourceTree = "<group>"; };
 		339C88EEB7651B6905E76F4F /* CoreBrightnessBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreBrightnessBridge.swift; sourceTree = "<group>"; };
 		383A20444E3812FA6F306A63 /* IOAVServiceBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOAVServiceBridge.swift; sourceTree = "<group>"; };
@@ -78,18 +95,31 @@
 		69B5D9A5878F5704FC95D3F8 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 		70C5E8FC2DA04C3C10337F9E /* DisplayModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayModels.swift; sourceTree = "<group>"; };
 		7AB2CC245083BD56092690D9 /* DisplayManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayManager.swift; sourceTree = "<group>"; };
+		7F477660C96D44424894E73E /* QuickTogglesSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickTogglesSection.swift; sourceTree = "<group>"; };
+		7FE2935200B7D0877A665983 /* PopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverView.swift; sourceTree = "<group>"; };
+		84583BF040FAF6A344AF49B2 /* ProfilesSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilesSettingsView.swift; sourceTree = "<group>"; };
 		8A92C6429D7651FFF7DA22E7 /* SkyLightBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyLightBridge.swift; sourceTree = "<group>"; };
+		9511788E622F1F41492435EA /* MenuBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarController.swift; sourceTree = "<group>"; };
 		965EB5C264215E2AE8152ADE /* OSDHUDController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSDHUDController.swift; sourceTree = "<group>"; };
 		9A090E89C3A12B7F126F21A5 /* SmokeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmokeTests.swift; sourceTree = "<group>"; };
 		A7B12E1510DAE1CCE87B0F6C /* openBetterDisplayApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = openBetterDisplayApp.swift; sourceTree = "<group>"; };
 		A7B9EA0FD788571E9B1FC39A /* NightShiftScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightShiftScheduler.swift; sourceTree = "<group>"; };
+		AB483524876E4A7AAFEC7F28 /* ControlsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlsSection.swift; sourceTree = "<group>"; };
+		AC80F3776D72EB2636D48D99 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		AE8936828281484F9BE72782 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		B819F9AA1EDC398A69C80828 /* MediaKeyInterceptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaKeyInterceptor.swift; sourceTree = "<group>"; };
+		BCC0E021648C6F12AC170077 /* ShortcutsSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutsSettingsView.swift; sourceTree = "<group>"; };
 		C868079F3C636D51AC598DE3 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
+		CBE51987BD9887F1EB73535D /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
+		CDFFB2A83B1791AE57A5A07C /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		D01B76D247E7C8FEE586EAFF /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
 		D66C8CC88C0C8F263E1C5513 /* CombinedBrightnessController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombinedBrightnessController.swift; sourceTree = "<group>"; };
+		DD3F61E30C504D7BEA5B1C86 /* DiagnosticsSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticsSettingsView.swift; sourceTree = "<group>"; };
+		DE1E170C9BBFE60C45D69712 /* DisclosuresSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisclosuresSection.swift; sourceTree = "<group>"; };
 		E4C9929208F98E2EB0190B3F /* ServiceManagement.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ServiceManagement.framework; path = System/Library/Frameworks/ServiceManagement.framework; sourceTree = SDKROOT; };
 		EBDCDC8864EBAE0674D611E9 /* FailsafeWatchdog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FailsafeWatchdog.swift; sourceTree = "<group>"; };
+		F16D12E22675BC848A5988F7 /* GeneralSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsView.swift; sourceTree = "<group>"; };
+		F8CA59B8040498B1ECAB6667 /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -199,10 +229,33 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
+		893AD4569C1AF766B4839CA7 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				CBE51987BD9887F1EB73535D /* Components.swift */,
+				AB483524876E4A7AAFEC7F28 /* ControlsSection.swift */,
+				DD3F61E30C504D7BEA5B1C86 /* DiagnosticsSettingsView.swift */,
+				DE1E170C9BBFE60C45D69712 /* DisclosuresSection.swift */,
+				035A148A4786C8A207F6EF3F /* DisplayCardsSection.swift */,
+				F16D12E22675BC848A5988F7 /* GeneralSettingsView.swift */,
+				2E1F6AA968753E87876C4B05 /* NightShiftSettingsView.swift */,
+				7FE2935200B7D0877A665983 /* PopoverView.swift */,
+				84583BF040FAF6A344AF49B2 /* ProfilesSettingsView.swift */,
+				7F477660C96D44424894E73E /* QuickTogglesSection.swift */,
+				CDFFB2A83B1791AE57A5A07C /* SettingsView.swift */,
+				BCC0E021648C6F12AC170077 /* ShortcutsSettingsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
 		8D684D292E5318EA6545E7AA /* openBetterDisplay */ = {
 			isa = PBXGroup;
 			children = (
+				AC80F3776D72EB2636D48D99 /* AppDelegate.swift */,
+				9511788E622F1F41492435EA /* MenuBarController.swift */,
 				A7B12E1510DAE1CCE87B0F6C /* openBetterDisplayApp.swift */,
+				F8CA59B8040498B1ECAB6667 /* SettingsWindowController.swift */,
+				893AD4569C1AF766B4839CA7 /* Views */,
 			);
 			path = openBetterDisplay;
 			sourceTree = "<group>";
@@ -443,6 +496,21 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5F4918B9D45DC563717BED76 /* AppDelegate.swift in Sources */,
+				96BA8FC0838CB972B2C52EE4 /* Components.swift in Sources */,
+				8CA241C4D4CF921298447EFA /* ControlsSection.swift in Sources */,
+				136F9D1A5CA4654ED5C79425 /* DiagnosticsSettingsView.swift in Sources */,
+				D45B8F449608FA2030BD7B0A /* DisclosuresSection.swift in Sources */,
+				7D3F7423327D673BC93BBFF7 /* DisplayCardsSection.swift in Sources */,
+				1DFCF5E8842E703948164CF8 /* GeneralSettingsView.swift in Sources */,
+				61ABB95B1C7B86DF4233489B /* MenuBarController.swift in Sources */,
+				F7CC49E85667084E199815B7 /* NightShiftSettingsView.swift in Sources */,
+				F169942B6F155DA7DE1ACBE9 /* PopoverView.swift in Sources */,
+				6C60FB09F6FB09E5FF4DB7B8 /* ProfilesSettingsView.swift in Sources */,
+				2093D64B2295416F47F2C289 /* QuickTogglesSection.swift in Sources */,
+				FAA65FBEA074C8DFB9966EDF /* SettingsView.swift in Sources */,
+				BED2C933C1FCD68F1CDD9128 /* SettingsWindowController.swift in Sources */,
+				635DCAA476DEE97FCC209767 /* ShortcutsSettingsView.swift in Sources */,
 				E17E0CD3E910F3F6DB374698 /* openBetterDisplayApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
