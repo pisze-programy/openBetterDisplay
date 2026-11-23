@@ -162,8 +162,8 @@ public final class CoreAudioObserver: AudioBackendProtocol, @unchecked Sendable 
     // MARK: AudioBackendProtocol
 
     public func isMonitorDefaultOutputDevice(displayID: CGDirectDisplayID) -> Bool {
-        guard CGDisplayIsBuiltin(displayID) == 0, let device = defaultOutputDevice() else { return false }
-        let externalCount = DisplayManager.onlineDisplayIDs().filter { CGDisplayIsBuiltin($0) == 0 }.count
+        guard CGDisplayIsBuiltin(displayID) != 1, let device = defaultOutputDevice() else { return false }
+        let externalCount = DisplayManager.onlineDisplayIDs().filter { CGDisplayIsBuiltin($0) != 1 }.count
         return Self.deviceMatchesDisplay(
             device: device,
             isBuiltInDisplay: false,

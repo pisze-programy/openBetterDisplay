@@ -101,7 +101,7 @@ public final class DDCController: DDCBackendProtocol, @unchecked Sendable {
 
     /// Reads a VCP feature (current & max values). Returns `nil` after `maxAttempts` failures.
     public func readVCP(displayID: CGDirectDisplayID, code: UInt8) -> DDCReply? {
-        guard CGDisplayIsBuiltin(displayID) == 0 else { return nil }
+        guard CGDisplayIsBuiltin(displayID) != 1 else { return nil }
         return queue.sync { readVCPLocked(displayID: displayID, code: code) }
     }
 
@@ -110,7 +110,7 @@ public final class DDCController: DDCBackendProtocol, @unchecked Sendable {
     /// - Warning: Sends DDC/CI writes to the physical monitor. Never call from tests against live hardware.
     @discardableResult
     public func writeVCP(displayID: CGDirectDisplayID, code: UInt8, value: UInt16) -> Bool {
-        guard CGDisplayIsBuiltin(displayID) == 0 else { return false }
+        guard CGDisplayIsBuiltin(displayID) != 1 else { return false }
         return queue.sync { writeVCPLocked(displayID: displayID, code: code, value: value) }
     }
 
@@ -161,7 +161,7 @@ public final class DDCController: DDCBackendProtocol, @unchecked Sendable {
     }
 
     private func writePercent(displayID: CGDirectDisplayID, code: UInt8, percent: UInt16) -> Bool {
-        guard CGDisplayIsBuiltin(displayID) == 0 else { return false }
+        guard CGDisplayIsBuiltin(displayID) != 1 else { return false }
         return queue.sync {
             let maxValue = maxValueLocked(displayID: displayID, code: code)
             let raw = DDCPacket.denormalize(percent: min(percent, 100), maxValue: maxValue)
@@ -173,7 +173,7 @@ public final class DDCController: DDCBackendProtocol, @unchecked Sendable {
 
     public func probeCapabilities(displayID: CGDirectDisplayID) -> DDCCapabilityReport {
         let name = CoreDisplayBridge.shared.productName(displayID: displayID) ?? "Display \(displayID)"
-        guard CGDisplayIsBuiltin(displayID) == 0 else {
+        guard CGDisplayIsBuiltin(displayID) != 1 else {
             return DDCCapabilityReport(displayID: displayID, displayName: name, hasIOAVService: false,
                                        probeError: "Built-in displays do not support DDC/CI.")
         }

@@ -18,9 +18,11 @@
 		26C10AB1001C543357AABB1C /* ProfileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 558634F7BCEB6271EF678400 /* ProfileStore.swift */; };
 		287216B183B71DE7A7A0B8F8 /* DisplayModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70C5E8FC2DA04C3C10337F9E /* DisplayModels.swift */; };
 		2E422CB606AE3651DF9B85B7 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 69B5D9A5878F5704FC95D3F8 /* AppIcon.icns */; };
+		3D45AA3E434EA115BCAF49D6 /* DisplayManagerAndDDCTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 786B1EA936E7A655DB01C121 /* DisplayManagerAndDDCTests.swift */; };
 		4D6BE5482FA99FD26DDD5B4C /* CoreAudioObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BB0E5808C32E85E0B59E617 /* CoreAudioObserver.swift */; };
 		4E94DB0F585C8DB04424B437 /* GlobalShortcutManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C099228938363BF5DC77BD2 /* GlobalShortcutManager.swift */; };
 		5271C62A4E2A8FE224F2DA46 /* OpenBetterDisplayCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 05514321C195DBE4B80F573D /* OpenBetterDisplayCore.framework */; };
+		5A3729E4D49597A9A0EF1924 /* ProfileStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 550B0EE7A297960CF575BB39 /* ProfileStoreTests.swift */; };
 		5B4F60DFFF44474382648731 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AE8936828281484F9BE72782 /* Cocoa.framework */; };
 		5F4918B9D45DC563717BED76 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC80F3776D72EB2636D48D99 /* AppDelegate.swift */; };
 		61ABB95B1C7B86DF4233489B /* MenuBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9511788E622F1F41492435EA /* MenuBarController.swift */; };
@@ -37,14 +39,18 @@
 		89F1A5FC88EC24350117BBBD /* AppController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02897AB580624A8D4B2CABAF /* AppController.swift */; };
 		8CA241C4D4CF921298447EFA /* ControlsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB483524876E4A7AAFEC7F28 /* ControlsSection.swift */; };
 		91BEFB8D6008E29AE056110B /* CoreDisplayBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D2B0785B034CB44FF19AE3B /* CoreDisplayBridge.swift */; };
+		92CA0A0F28099225561ED54C /* CombinedBrightnessAndOverlayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F929489A42F06C2E47C36075 /* CombinedBrightnessAndOverlayTests.swift */; };
 		92F4EE57EE72951F28EE0F21 /* OpenBetterDisplayCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 05514321C195DBE4B80F573D /* OpenBetterDisplayCore.framework */; };
 		96BA8FC0838CB972B2C52EE4 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBE51987BD9887F1EB73535D /* Components.swift */; };
 		98F3C6904662B4C8FF5C14D0 /* DisplayManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AB2CC245083BD56092690D9 /* DisplayManager.swift */; };
+		9B92329287D2C745F5252D2C /* FailsafeWatchdogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF629A6D923A2E8369B29015 /* FailsafeWatchdogTests.swift */; };
 		A466CE1EF73683195EBF9A7F /* LaunchAtLoginManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EB77B5BB5BC9FBE6B3FE42A /* LaunchAtLoginManager.swift */; };
 		B11D6197441A68CDDE85523B /* NightShiftScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7B9EA0FD788571E9B1FC39A /* NightShiftScheduler.swift */; };
+		B4626F1BE282442B5C186F1C /* AudioAndInputTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4261E648F058D04EDEBE1215 /* AudioAndInputTests.swift */; };
 		B86FA614D53AA17401EB8AB8 /* CombinedBrightnessController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D66C8CC88C0C8F263E1C5513 /* CombinedBrightnessController.swift */; };
 		BED2C933C1FCD68F1CDD9128 /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8CA59B8040498B1ECAB6667 /* SettingsWindowController.swift */; };
 		C1DCE147F881830F9C15AB50 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D01B76D247E7C8FEE586EAFF /* CoreGraphics.framework */; };
+		C644E50CBED8542DC34390F6 /* NightShiftSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60281BB2AEDBC46C8E216581 /* NightShiftSchedulerTests.swift */; };
 		D45B8F449608FA2030BD7B0A /* DisclosuresSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE1E170C9BBFE60C45D69712 /* DisclosuresSection.swift */; };
 		DD286ACF015D348855514EB1 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C868079F3C636D51AC598DE3 /* CoreAudio.framework */; };
 		E17E0CD3E910F3F6DB374698 /* openBetterDisplayApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7B12E1510DAE1CCE87B0F6C /* openBetterDisplayApp.swift */; };
@@ -87,13 +93,17 @@
 		2EB77B5BB5BC9FBE6B3FE42A /* LaunchAtLoginManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginManager.swift; sourceTree = "<group>"; };
 		339C88EEB7651B6905E76F4F /* CoreBrightnessBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreBrightnessBridge.swift; sourceTree = "<group>"; };
 		383A20444E3812FA6F306A63 /* IOAVServiceBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOAVServiceBridge.swift; sourceTree = "<group>"; };
+		4261E648F058D04EDEBE1215 /* AudioAndInputTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAndInputTests.swift; sourceTree = "<group>"; };
 		4B0A140D68FB0A79EA398093 /* openBetterDisplayTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = openBetterDisplayTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4B8A84F2F1F3FBC88008652E /* openBetterDisplay.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = openBetterDisplay.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4D622BD918136F397B69504B /* OverlayManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayManager.swift; sourceTree = "<group>"; };
+		550B0EE7A297960CF575BB39 /* ProfileStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileStoreTests.swift; sourceTree = "<group>"; };
 		558634F7BCEB6271EF678400 /* ProfileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileStore.swift; sourceTree = "<group>"; };
 		5A56BF766F1DA7B5269B7B18 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
+		60281BB2AEDBC46C8E216581 /* NightShiftSchedulerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightShiftSchedulerTests.swift; sourceTree = "<group>"; };
 		69B5D9A5878F5704FC95D3F8 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 		70C5E8FC2DA04C3C10337F9E /* DisplayModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayModels.swift; sourceTree = "<group>"; };
+		786B1EA936E7A655DB01C121 /* DisplayManagerAndDDCTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayManagerAndDDCTests.swift; sourceTree = "<group>"; };
 		7AB2CC245083BD56092690D9 /* DisplayManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayManager.swift; sourceTree = "<group>"; };
 		7F477660C96D44424894E73E /* QuickTogglesSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickTogglesSection.swift; sourceTree = "<group>"; };
 		7FE2935200B7D0877A665983 /* PopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverView.swift; sourceTree = "<group>"; };
@@ -107,6 +117,7 @@
 		AB483524876E4A7AAFEC7F28 /* ControlsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlsSection.swift; sourceTree = "<group>"; };
 		AC80F3776D72EB2636D48D99 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		AE8936828281484F9BE72782 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
+		AF629A6D923A2E8369B29015 /* FailsafeWatchdogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FailsafeWatchdogTests.swift; sourceTree = "<group>"; };
 		B819F9AA1EDC398A69C80828 /* MediaKeyInterceptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaKeyInterceptor.swift; sourceTree = "<group>"; };
 		BCC0E021648C6F12AC170077 /* ShortcutsSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutsSettingsView.swift; sourceTree = "<group>"; };
 		C868079F3C636D51AC598DE3 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
@@ -120,6 +131,7 @@
 		EBDCDC8864EBAE0674D611E9 /* FailsafeWatchdog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FailsafeWatchdog.swift; sourceTree = "<group>"; };
 		F16D12E22675BC848A5988F7 /* GeneralSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsView.swift; sourceTree = "<group>"; };
 		F8CA59B8040498B1ECAB6667 /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
+		F929489A42F06C2E47C36075 /* CombinedBrightnessAndOverlayTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombinedBrightnessAndOverlayTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -215,6 +227,12 @@
 		6DF0EFFCDE3E428B78F4B1AE /* openBetterDisplayTests */ = {
 			isa = PBXGroup;
 			children = (
+				4261E648F058D04EDEBE1215 /* AudioAndInputTests.swift */,
+				F929489A42F06C2E47C36075 /* CombinedBrightnessAndOverlayTests.swift */,
+				786B1EA936E7A655DB01C121 /* DisplayManagerAndDDCTests.swift */,
+				AF629A6D923A2E8369B29015 /* FailsafeWatchdogTests.swift */,
+				60281BB2AEDBC46C8E216581 /* NightShiftSchedulerTests.swift */,
+				550B0EE7A297960CF575BB39 /* ProfileStoreTests.swift */,
 				9A090E89C3A12B7F126F21A5 /* SmokeTests.swift */,
 			);
 			path = openBetterDisplayTests;
@@ -488,6 +506,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B4626F1BE282442B5C186F1C /* AudioAndInputTests.swift in Sources */,
+				92CA0A0F28099225561ED54C /* CombinedBrightnessAndOverlayTests.swift in Sources */,
+				3D45AA3E434EA115BCAF49D6 /* DisplayManagerAndDDCTests.swift in Sources */,
+				9B92329287D2C745F5252D2C /* FailsafeWatchdogTests.swift in Sources */,
+				C644E50CBED8542DC34390F6 /* NightShiftSchedulerTests.swift in Sources */,
+				5A3729E4D49597A9A0EF1924 /* ProfileStoreTests.swift in Sources */,
 				1DC4CAC2F7B67E487C556C9A /* SmokeTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

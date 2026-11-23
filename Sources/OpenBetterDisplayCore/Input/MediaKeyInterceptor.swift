@@ -42,6 +42,7 @@ public final class MediaKeyInterceptor {
     private let audioBackend: AudioBackendProtocol?
     private let activeDisplayIDsProvider: () -> [CGDirectDisplayID]
     private let targetProvider: () -> MultiMonitorBrightnessTarget
+    private let isBuiltInDisplay: (CGDirectDisplayID) -> Bool
 
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
@@ -50,8 +51,10 @@ public final class MediaKeyInterceptor {
     public init(
         audioBackend: AudioBackendProtocol?,
         activeDisplayIDsProvider: @escaping () -> [CGDirectDisplayID],
-        targetProvider: @escaping () -> MultiMonitorBrightnessTarget
+        targetProvider: @escaping () -> MultiMonitorBrightnessTarget,
+        isBuiltInDisplay: @escaping (CGDirectDisplayID) -> Bool = { CGDisplayIsBuiltin($0) == 1 }
     ) {
+        self.isBuiltInDisplay = isBuiltInDisplay
         self.audioBackend = audioBackend
         self.activeDisplayIDsProvider = activeDisplayIDsProvider
         self.targetProvider = targetProvider
@@ -196,7 +199,7 @@ public final class MediaKeyInterceptor {
     public func activeAudioMonitor() -> CGDirectDisplayID? {
         guard let audio = audioBackend else { return nil }
         return activeDisplayIDsProvider().first { id in
-            CGDisplayIsBuiltin(id) == 0 && audio.isMonitorDefaultOutputDevice(displayID: id)
+            !isBuiltInDisplay(id) && audio.isMonitorDefaultOutputDevice(displayID: id)
         }
     }
 

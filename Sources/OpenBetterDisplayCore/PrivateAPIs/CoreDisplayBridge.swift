@@ -58,7 +58,7 @@ public final class CoreDisplayBridge: @unchecked Sendable {
 
     /// Whether the display exposes an "HDR mode" toggle. Built-in XDR panels (always-on EDR) report `false`.
     public func supportsHDR(displayID: CGDirectDisplayID) -> Bool {
-        guard CGDisplayIsBuiltin(displayID) == 0 else { return false }
+        guard CGDisplayIsBuiltin(displayID) != 1 else { return false }
         if let fn = cdSupportsHDR, fn(displayID) { return true }
         if let fn = slsSupportsHDR, fn(displayID) { return true }
         if MonitorPanelBridge.shared.hasHDRModes(displayID: displayID) == true { return true }
@@ -67,7 +67,7 @@ public final class CoreDisplayBridge: @unchecked Sendable {
     }
 
     public func isHDREnabled(displayID: CGDirectDisplayID) -> Bool {
-        guard CGDisplayIsBuiltin(displayID) == 0 else { return false }
+        guard CGDisplayIsBuiltin(displayID) != 1 else { return false }
         if let fn = cdIsHDREnabled { return fn(displayID) }
         if let fn = slsIsHDREnabled { return fn(displayID) }
         if let prefer = MonitorPanelBridge.shared.preferHDRModes(displayID: displayID) { return prefer }

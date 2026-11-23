@@ -191,8 +191,8 @@ public final class OSDHUDController {
             defer: false
         )
         panel.isReleasedWhenClosed = false
+        panel.isFloatingPanel = true // note: resets `level`, so the level must be set afterwards
         panel.level = NSWindow.Level(rawValue: OverlayManager.overlayWindowLevel.rawValue + 1)
-        panel.isFloatingPanel = true
         panel.hidesOnDeactivate = false
         panel.becomesKeyOnlyIfNeeded = true
         panel.ignoresMouseEvents = true

@@ -212,7 +212,7 @@ public final class IOAVServiceBridge: @unchecked Sendable {
 
     /// Returns the cached or freshly matched `IOAVService` for an external display.
     public func service(for displayID: CGDirectDisplayID) -> CFTypeRef? {
-        guard isAvailable, CGDisplayIsBuiltin(displayID) == 0 else { return nil }
+        guard isAvailable, CGDisplayIsBuiltin(displayID) != 1 else { return nil }
         lock.lock()
         if let cached = cache[displayID] {
             lock.unlock()
@@ -247,7 +247,7 @@ public final class IOAVServiceBridge: @unchecked Sendable {
         if let best { return best.service }
 
         // Fallback: exactly one external display online and exactly one external AV service proxy.
-        let externalOnline = Self.onlineDisplayIDs().filter { CGDisplayIsBuiltin($0) == 0 }
+        let externalOnline = Self.onlineDisplayIDs().filter { CGDisplayIsBuiltin($0) != 1 }
         if externalOnline.count == 1, externalOnline.first == displayID, entries.count == 1 {
             return entries[0].service
         }

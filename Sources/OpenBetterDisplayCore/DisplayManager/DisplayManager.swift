@@ -69,7 +69,7 @@ public final class DisplayManager: DisplayBackendProtocol, @unchecked Sendable {
     public func activeExternalDisplayIDs() -> [CGDirectDisplayID] {
         let active = Set(Self.activeDisplayIDs())
         return Self.onlineDisplayIDs().filter { id in
-            CGDisplayIsBuiltin(id) == 0 && (active.contains(id) || CGDisplayIsActive(id) != 0)
+            CGDisplayIsBuiltin(id) != 1 && (active.contains(id) || CGDisplayIsActive(id) != 0)
         }
     }
 
@@ -77,7 +77,7 @@ public final class DisplayManager: DisplayBackendProtocol, @unchecked Sendable {
     public func builtInDisplayID() -> CGDirectDisplayID? {
         var candidates = Self.onlineDisplayIDs() + Self.activeDisplayIDs()
         if let all = skyLight.allKnownDisplayIDs() { candidates += all }
-        if let found = candidates.first(where: { CGDisplayIsBuiltin($0) != 0 }) {
+        if let found = candidates.first(where: { CGDisplayIsBuiltin($0) == 1 }) {
             stateLock.lock()
             cachedBuiltInID = found
             stateLock.unlock()
@@ -85,7 +85,7 @@ public final class DisplayManager: DisplayBackendProtocol, @unchecked Sendable {
         }
         stateLock.lock()
         defer { stateLock.unlock() }
-        if let cached = cachedBuiltInID, CGDisplayIsBuiltin(cached) != 0 { return cached }
+        if let cached = cachedBuiltInID, CGDisplayIsBuiltin(cached) == 1 { return cached }
         return nil
     }
 
@@ -160,7 +160,7 @@ public final class DisplayManager: DisplayBackendProtocol, @unchecked Sendable {
         activeSet: Set<CGDirectDisplayID>,
         lidClosed: Bool
     ) -> DisplayInfo {
-        let isBuiltIn = CGDisplayIsBuiltin(id) != 0
+        let isBuiltIn = CGDisplayIsBuiltin(id) == 1
         let isActive = activeSet.contains(id) || CGDisplayIsActive(id) != 0
         let mirrorMaster = CGDisplayMirrorsDisplay(id)
         let inMirrorSet = CGDisplayIsInMirrorSet(id) != 0
