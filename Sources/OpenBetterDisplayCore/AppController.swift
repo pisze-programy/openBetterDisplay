@@ -377,6 +377,12 @@ public final class AppController: ObservableObject {
         Self.primaryExternalDisplay(in: displays)
     }
 
+    /// `true` when the Built-in toggle may be interacted with: turning ON is always allowed, while turning OFF
+    /// requires at least one active physical external display.
+    public var canToggleBuiltInDisplay: Bool {
+        !isBuiltInEnabled || primaryExternalDisplay != nil
+    }
+
     private nonisolated static func primaryExternalDisplay(in list: [DisplayInfo]) -> DisplayInfo? {
         let externals = list.filter { !$0.isBuiltIn && !$0.isVirtual && $0.isOnline && $0.isEnabled }
         return externals.first { $0.isMain } ?? externals.first

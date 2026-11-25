@@ -40,6 +40,10 @@ private struct DisplayCard: View {
 
     private var hasActiveExternal: Bool { controller.primaryExternalDisplay != nil }
 
+    private var isBuiltInToggleLocked: Bool { controller.isBuiltInEnabled && !hasActiveExternal }
+
+    private var isBuiltInToggleDisabled: Bool { controller.isBusySwitching || !controller.canToggleBuiltInDisplay }
+
     private var subtitle: String {
         if display.isBuiltIn && !controller.isBuiltInEnabled { return "Off" }
         if !display.isEnabled { return display.isMirrored ? "Mirrored" : "Disabled" }
@@ -75,17 +79,29 @@ private struct DisplayCard: View {
             Spacer(minLength: 4)
 
             if display.isBuiltIn {
-                Toggle("", isOn: Binding(
-                    get: { controller.isBuiltInEnabled },
-                    set: { controller.setBuiltInDisplayEnabled($0) }
-                ))
-                .toggleStyle(.switch)
-                .controlSize(.small)
-                .labelsHidden()
-                // Turning ON must always stay possible; turning OFF requires an active external display.
-                .disabled(controller.isBusySwitching || (controller.isBuiltInEnabled && !hasActiveExternal))
-                .help(controller.isBuiltInEnabled && !hasActiveExternal
-                      ? "Connect an external display first"
+                HStack(spacing: 5) {
+                    if isBuiltInToggleLocked {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.tertiary)
+                    }
+                    Toggle("", isOn: Binding(
+                        get: { controller.isBuiltInEnabled },
+                        set: { newValue in
+                            guard newValue || hasActiveExternal else { return }
+                            controller.setBuiltInDisplayEnabled(newValue)
+                        }
+                    ))
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+                    .labelsHidden()
+                    .tint(isBuiltInToggleLocked ? .secondary : .accentColor)
+                    // Turning ON must always stay possible; turning OFF requires an active physical external display.
+                    .disabled(isBuiltInToggleDisabled)
+                    .opacity(isBuiltInToggleLocked ? 0.45 : 1.0)
+                }
+                .help(isBuiltInToggleLocked
+                      ? "Connect an external display to disable the Built-in Display"
                       : (controller.isBuiltInEnabled ? "Turn Built-in Display off" : "Turn Built-in Display on"))
             } else {
                 StatusDot(isOn: display.isEnabled)
