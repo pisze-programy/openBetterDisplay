@@ -1,6 +1,9 @@
 import AppKit
 import CoreGraphics
 import Foundation
+import os
+
+private let failsafeLogger = Logger(subsystem: "com.piszeprogramy.openbetterdisplay", category: "failsafe")
 
 // MARK: - FailsafeTrigger
 
@@ -18,7 +21,7 @@ public enum FailsafeTrigger: String, Sendable, CaseIterable {
 ///
 /// Re-enables the Built-in Display whenever it is soft-disconnected and **no** online & active physical
 /// external display remains (ignoring WindowServer headless/virtual placeholder displays) for at least
-/// `disconnectGracePeriod` (default **15 seconds**, tolerating brief cable glitches / link retraining).
+/// `disconnectGracePeriod` (default **5 seconds**, tolerating brief cable glitches / link retraining).
 ///
 /// Safety layers:
 /// 1. `CGDisplayRegisterReconfigurationCallback` (cable unplug, monitor power-off).
@@ -33,7 +36,7 @@ public final class FailsafeWatchdog: @unchecked Sendable {
 
     /// Minimum continuous time without any active physical external display before automatically
     /// re-enabling the Built-in Display (prevents flicker on brief cable drops / link retraining).
-    public static let defaultDisconnectGracePeriod: TimeInterval = 15.0
+    public static let defaultDisconnectGracePeriod: TimeInterval = 5.0
     /// Heartbeat polling interval while running. Cheap no-op when Built-in is already enabled.
     public static let defaultPollInterval: TimeInterval = 1.0
 
@@ -68,7 +71,7 @@ public final class FailsafeWatchdog: @unchecked Sendable {
     ///   - notificationCenter: where sleep/wake notifications are observed (defaults to `NSWorkspace`'s center).
     ///   - observeDisplayReconfiguration: register a `CGDisplayRegisterReconfigurationCallback` on `start()`.
     ///   - disconnectGracePeriod: minimum continuous seconds without an active physical external display before
-    ///     restoring Built-in (`0` restores immediately; defaults to `15.0`).
+    ///     restoring Built-in (`0` restores immediately; defaults to `5.0`).
     ///   - pollInterval: periodic heartbeat interval in seconds (`0` disables polling; defaults to `1.0`).
     ///   - wakeRecheckDelays: additional checks after wake while external displays re-handshake.
     ///   - reconfigurationRecheckDelay: one follow-up check after a burst of reconfiguration events (`0` disables).
@@ -315,6 +318,9 @@ public final class FailsafeWatchdog: @unchecked Sendable {
 
         guard Self.shouldRestoreBuiltIn(builtInEnabled: false, displays: displays) else {
             // A real physical external display is active (or returned within the grace period).
+            if isGraceCountdownActive {
+                failsafeLogger.notice("Physical external display returned within grace period — cancelling Built-in restore countdown")
+            }
             clearGraceCountdown()
             return
         }
@@ -327,6 +333,7 @@ public final class FailsafeWatchdog: @unchecked Sendable {
 
         let currentTime = now()
         var shouldRestoreNow = false
+        var startedCountdown = false
         var effectiveTrigger = trigger
         var scheduleDelay: TimeInterval?
         var lifecycle = 0
@@ -347,10 +354,17 @@ public final class FailsafeWatchdog: @unchecked Sendable {
             headlessSince = currentTime
             pendingTrigger = trigger
             scheduleDelay = disconnectGracePeriod
+            startedCountdown = true
         }
         lock.unlock()
 
+        if startedCountdown {
+            let summary = displays.map { "\($0.id)(bi:\($0.isBuiltIn ? 1 : 0),v:\($0.isVirtual ? 1 : 0),on:\($0.isOnline ? 1 : 0),en:\($0.isEnabled ? 1 : 0))" }.joined(separator: ",")
+            failsafeLogger.notice("No active physical external display [\(summary, privacy: .public)] — starting \(self.disconnectGracePeriod, privacy: .public)s failsafe countdown (trigger=\(trigger.rawValue, privacy: .public))")
+        }
+
         if shouldRestoreNow {
+            failsafeLogger.notice("Failsafe grace period (\(self.disconnectGracePeriod, privacy: .public)s) elapsed — restoring Built-in Display (trigger=\(effectiveTrigger.rawValue, privacy: .public))")
             if restoreBuiltIn(trigger: effectiveTrigger) {
                 clearGraceCountdown()
             }
@@ -433,10 +447,12 @@ public final class FailsafeWatchdog: @unchecked Sendable {
         do {
             try backend.setBuiltInDisplayEnabled(true)
         } catch {
+            failsafeLogger.error("setBuiltInDisplayEnabled(true) threw: \(error.localizedDescription, privacy: .public); attempting emergencyRestoreAllDisplays()")
             // Fallback: full emergency restore.
             try? backend.emergencyRestoreAllDisplays()
         }
         let restored = backend.isBuiltInDisplayEnabled()
+        failsafeLogger.notice("Built-in restore result=\(restored, privacy: .public) (trigger=\(trigger.rawValue, privacy: .public))")
         if restored { onRestore?(trigger) }
         return restored
     }

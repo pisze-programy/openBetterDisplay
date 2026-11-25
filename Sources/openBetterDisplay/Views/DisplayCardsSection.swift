@@ -44,9 +44,17 @@ private struct DisplayCard: View {
 
     private var isBuiltInToggleDisabled: Bool { controller.isBusySwitching || !controller.canToggleBuiltInDisplay }
 
+    private var isExternalToggleLocked: Bool { display.isEnabled && !controller.canToggleDisplay(display) }
+
+    private var isExternalToggleDisabled: Bool { controller.isBusySwitching || isExternalToggleLocked }
+
+    private var hasOtherActiveExternal: Bool {
+        controller.displays.contains { $0.id != display.id && !$0.isBuiltIn && !$0.isVirtual && $0.isOnline && $0.isEnabled }
+    }
+
     private var subtitle: String {
         if display.isBuiltIn && !controller.isBuiltInEnabled { return "Off" }
-        if !display.isEnabled { return display.isMirrored ? "Mirrored" : "Disabled" }
+        if !display.isEnabled { return display.isMirrored ? "Mirrored" : "Off" }
         if let mode = display.currentMode { return ModeFormat.summary(mode) }
         return "Active"
     }
@@ -104,8 +112,27 @@ private struct DisplayCard: View {
                       ? "Connect an external display to disable the Built-in Display"
                       : (controller.isBuiltInEnabled ? "Turn Built-in Display off" : "Turn Built-in Display on"))
             } else {
-                StatusDot(isOn: display.isEnabled)
-                    .help(display.isEnabled ? "Active" : "Inactive")
+                HStack(spacing: 5) {
+                    if isExternalToggleLocked {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.tertiary)
+                    }
+                    Toggle("", isOn: Binding(
+                        get: { display.isEnabled },
+                        set: { newValue in
+                            guard newValue || controller.canToggleDisplay(display) else { return }
+                            controller.setDisplayEnabled(newValue, for: display.id)
+                        }
+                    ))
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+                    .labelsHidden()
+                    .tint(isExternalToggleLocked ? .secondary : .accentColor)
+                    .disabled(isExternalToggleDisabled)
+                    .opacity(isExternalToggleLocked ? 0.45 : 1.0)
+                }
+                .help(externalToggleHelpText)
             }
         }
         .padding(10)
@@ -128,5 +155,18 @@ private struct DisplayCard: View {
             if display.isEnabled { controller.selectedDisplayID = display.id }
         }
         .opacity(display.isEnabled ? 1 : 0.7)
+    }
+
+    private var externalToggleHelpText: String {
+        if isExternalToggleLocked {
+            return "No other display available to switch to"
+        }
+        if display.isEnabled {
+            if !controller.isBuiltInEnabled && !hasOtherActiveExternal {
+                return "Turn \(display.name) off and switch to Built-in Display"
+            }
+            return "Turn \(display.name) off"
+        }
+        return "Turn \(display.name) on"
     }
 }

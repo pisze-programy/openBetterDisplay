@@ -38,6 +38,7 @@ public enum DisplayError: LocalizedError, Equatable, Sendable {
 public protocol DisplayBackendProtocol: Sendable {
     func getOnlineDisplays() -> [DisplayInfo]
     func setBuiltInDisplayEnabled(_ enabled: Bool) throws
+    func setDisplayEnabled(displayID: CGDirectDisplayID, enabled: Bool) throws
     func isBuiltInDisplayEnabled() -> Bool
     func setDisplayMode(displayID: CGDirectDisplayID, mode: DisplayModeInfo) throws
     func setMainDisplay(displayID: CGDirectDisplayID) throws
@@ -46,6 +47,12 @@ public protocol DisplayBackendProtocol: Sendable {
     func setHDREnabled(displayID: CGDirectDisplayID, enabled: Bool) throws
     func isHDREnabled(displayID: CGDirectDisplayID) -> Bool
     func emergencyRestoreAllDisplays() throws
+}
+
+public extension DisplayBackendProtocol {
+    func setDisplayEnabled(displayID: CGDirectDisplayID, enabled: Bool) throws {
+        try setBuiltInDisplayEnabled(enabled)
+    }
 }
 
 // MARK: - DDCBackendProtocol

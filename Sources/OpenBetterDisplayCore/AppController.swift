@@ -171,9 +171,11 @@ public final class AppController: ObservableObject {
 
     /// Call from `applicationWillTerminate`. Restores the Built-in Display synchronously first.
     public func handleApplicationWillTerminate() {
-        // 1. Zero Black-Screen Guarantee: the watchdog stops with the app, so the Built-in must come back now.
+        // 1. Zero Black-Screen Guarantee: the watchdog stops with the app, so the Built-in and any
+        //    soft-disabled external displays must come back now.
         failsafeWatchdog.restoreBuiltInForQuit()
         failsafeWatchdog.stop()
+        displayManager.restoreSoftDisabledExternalDisplays()
 
         // 2. Tear down interceptors and overlays.
         mediaKeyInterceptor.stop()
@@ -383,12 +385,59 @@ public final class AppController: ObservableObject {
         !isBuiltInEnabled || primaryExternalDisplay != nil
     }
 
+    /// `true` when `display`'s ON/OFF toggle may be interacted with.
+    /// Turning any display ON is always allowed; turning OFF requires either another active physical display
+    /// or an online Built-in Display to switch to.
+    public func canToggleDisplay(_ display: DisplayInfo) -> Bool {
+        if display.isBuiltIn { return canToggleBuiltInDisplay }
+        if !display.isEnabled { return true }
+        return DisplayManager.canDisableDisplay(id: display.id, displays: displays)
+    }
+
     private nonisolated static func primaryExternalDisplay(in list: [DisplayInfo]) -> DisplayInfo? {
         let externals = list.filter { !$0.isBuiltIn && !$0.isVirtual && $0.isOnline && $0.isEnabled }
         return externals.first { $0.isMain } ?? externals.first
     }
 
-    // MARK: - Built-in display
+    // MARK: - Built-in & external display power toggles
+
+    public func setDisplayEnabled(_ enabled: Bool, for displayID: CGDirectDisplayID) {
+        if let display = displays.first(where: { $0.id == displayID }), display.isBuiltIn {
+            setBuiltInDisplayEnabled(enabled)
+            return
+        }
+        let targetName = displays.first(where: { $0.id == displayID })?.name ?? "External Display"
+        let willSwitchToBuiltIn = !enabled && !isBuiltInEnabled &&
+            !displays.contains(where: { $0.id != displayID && !$0.isBuiltIn && !$0.isVirtual && $0.isOnline && $0.isEnabled })
+
+        isBusySwitching = true
+        let manager = displayManager
+        displayQueue.async { [weak self] in
+            let result = Result { try manager.setDisplayEnabled(displayID: displayID, enabled: enabled) }
+            Task { @MainActor in
+                guard let self else { return }
+                self.isBusySwitching = false
+                switch result {
+                case .success:
+                    self.lastErrorMessage = nil
+                    if !enabled {
+                        self.brightnessController.forget(displayID: displayID)
+                        self.overlayManager.removeOverlay(for: displayID)
+                        self.brightnessMethodByDisplay.removeValue(forKey: displayID)
+                    }
+                    if willSwitchToBuiltIn {
+                        self.showNotice(title: "Switched to Built-in Display", subtitle: "\(targetName) Off")
+                    } else {
+                        self.showNotice(title: enabled ? "\(targetName) On" : "\(targetName) Off", subtitle: nil)
+                    }
+                    self.profileStore.handleDisplayReconfiguration()
+                case .failure(let error):
+                    self.report(error)
+                }
+                self.refreshDisplays(probeDDC: enabled)
+            }
+        }
+    }
 
     public func setBuiltInDisplayEnabled(_ enabled: Bool) {
         isBusySwitching = true

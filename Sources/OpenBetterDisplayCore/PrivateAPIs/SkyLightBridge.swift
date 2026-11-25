@@ -87,7 +87,7 @@ public final class SkyLightBridge: @unchecked Sendable {
         guard err == .success else { return nil }
         return ids.prefix(Int(min(count, 32))).filter { id in
             id != kCGNullDirectDisplay &&
-                (CGDisplayIsBuiltin(id) == 1 || CGDisplayVendorNumber(id) != 0 || CGDisplayModelNumber(id) != 0 || CGDisplayIsOnline(id) != 0)
+                (CGDisplayIsBuiltin(id) == 1 || CGDisplayVendorNumber(id) != 0 || CGDisplayModelNumber(id) != 0 || CGDisplayIsOnline(id) == 1)
         }
     }
 

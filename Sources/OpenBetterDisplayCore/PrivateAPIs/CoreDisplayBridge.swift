@@ -81,7 +81,7 @@ public final class CoreDisplayBridge: @unchecked Sendable {
     ///
     /// - Warning: Mutates the live display configuration. Never call from tests.
     public func setHDREnabled(displayID: CGDirectDisplayID, enabled: Bool, verifyTimeout: TimeInterval = 2.5) throws {
-        guard CGDisplayIsOnline(displayID) != 0 else { throw DisplayError.displayNotFound(displayID) }
+        guard CGDisplayIsOnline(displayID) == 1 else { throw DisplayError.displayNotFound(displayID) }
         guard supportsHDR(displayID: displayID) else {
             throw DisplayError.unsupportedOperation("Display \(displayID) does not support HDR mode.")
         }

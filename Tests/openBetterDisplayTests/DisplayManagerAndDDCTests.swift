@@ -366,6 +366,26 @@ final class DisplayManagerHelperTests: XCTestCase {
         XCTAssertTrue(DisplayManager.canDisableBuiltIn(displays: [display(1, builtIn: true), display(2, builtIn: false)]))
     }
 
+    func testCanDisableDisplayExternalAutoSwitchesToBuiltInWhenLidOpen() {
+        let builtInOffLidOpen = display(1, builtIn: true, online: true, enabled: false)
+        let builtInOffLidClosed = display(1, builtIn: true, online: false, enabled: false)
+        let builtInOn = display(1, builtIn: true, online: true, enabled: true)
+        let ext1 = display(3, builtIn: false, online: true, enabled: true)
+        let ext2 = display(4, builtIn: false, online: true, enabled: true)
+
+        // External can be turned OFF even while Built-in is OFF if lid is open (will auto-switch to Built-in).
+        XCTAssertTrue(DisplayManager.canDisableDisplay(id: 3, displays: [builtInOffLidOpen, ext1]))
+        // External can be turned OFF when Built-in is already ON or another external is active.
+        XCTAssertTrue(DisplayManager.canDisableDisplay(id: 3, displays: [builtInOn, ext1]))
+        XCTAssertTrue(DisplayManager.canDisableDisplay(id: 3, displays: [builtInOffLidClosed, ext1, ext2]))
+        // Cannot disable the only external display when lid is closed or on a desktop Mac with no Built-in.
+        XCTAssertFalse(DisplayManager.canDisableDisplay(id: 3, displays: [builtInOffLidClosed, ext1]))
+        XCTAssertFalse(DisplayManager.canDisableDisplay(id: 3, displays: [ext1]))
+        // Built-in still requires an active physical external display.
+        XCTAssertFalse(DisplayManager.canDisableDisplay(id: 1, displays: [builtInOn]))
+        XCTAssertTrue(DisplayManager.canDisableDisplay(id: 1, displays: [builtInOn, ext1]))
+    }
+
     func testVirtualDisplayDetection() {
         // WindowServer headless placeholder ('unkn' / 'virt')
         XCTAssertTrue(DisplayManager.isVirtualDisplay(vendor: 0x756E6B6E, model: 0x76697274, isVirtualDeviceFlag: false))
@@ -377,6 +397,27 @@ final class DisplayManagerHelperTests: XCTestCase {
         // Real physical monitors (Samsung LC49G95T, Apple Built-in)
         XCTAssertFalse(DisplayManager.isVirtualDisplay(vendor: 19501, model: 28754, isVirtualDeviceFlag: false))
         XCTAssertFalse(DisplayManager.isVirtualDisplay(vendor: 1552, model: 41038, isVirtualDeviceFlag: false))
+    }
+
+    func testCGDisplayErrorSentinelsAreTreatedAsFalseAndNil() {
+        // CoreGraphics returns -1 (0xFFFFFFFF) for invalid/off-console display IDs (e.g. during headless
+        // kCGSDisplayMovedOffConsoleInternal). `!= 0` wrongly treated -1 as true!
+        let cgError: boolean_t = -1
+        XCTAssertTrue(DisplayManager.isCGTrue(1))
+        XCTAssertFalse(DisplayManager.isCGTrue(0))
+        XCTAssertFalse(DisplayManager.isCGTrue(cgError))
+
+        // Verify directly against CoreGraphics with a guaranteed-invalid display ID.
+        let invalidID: CGDirectDisplayID = 0x0BAD_F00D
+        XCTAssertFalse(DisplayManager.isCGTrue(CGDisplayIsActive(invalidID)))
+        XCTAssertFalse(DisplayManager.isCGTrue(CGDisplayIsOnline(invalidID)))
+        XCTAssertFalse(DisplayManager.isCGTrue(CGDisplayIsInMirrorSet(invalidID)))
+        XCTAssertFalse(DisplayManager.isCGTrue(CGDisplayIsMain(invalidID)))
+        XCTAssertNil(DisplayManager.validMirrorMaster(rawValue: CGDisplayMirrorsDisplay(invalidID)))
+
+        XCTAssertNil(DisplayManager.validMirrorMaster(rawValue: kCGNullDirectDisplay))
+        XCTAssertNil(DisplayManager.validMirrorMaster(rawValue: UInt32.max))
+        XCTAssertEqual(DisplayManager.validMirrorMaster(rawValue: 3), 3)
     }
 
     func testNormalizedRotation() {

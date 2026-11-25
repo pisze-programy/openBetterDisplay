@@ -468,10 +468,10 @@ final class FailsafeWatchdogTests: XCTestCase {
         XCTAssertEqual(backend.enableCalls, 0)
     }
 
-    // MARK: Virtual placeholder displays & 15s grace period
+    // MARK: Virtual placeholder displays & 5s grace period
 
-    func testDefaultsUseFifteenSecondGracePeriodAndOneSecondHeartbeat() {
-        XCTAssertEqual(FailsafeWatchdog.defaultDisconnectGracePeriod, 15.0)
+    func testDefaultsUseFiveSecondGracePeriodAndOneSecondHeartbeat() {
+        XCTAssertEqual(FailsafeWatchdog.defaultDisconnectGracePeriod, 5.0)
         XCTAssertEqual(FailsafeWatchdog.defaultPollInterval, 1.0)
     }
 
@@ -506,11 +506,11 @@ final class FailsafeWatchdogTests: XCTestCase {
         XCTAssertEqual(recorder.triggers, [.displayReconfiguration])
     }
 
-    func testBriefCableFlickerUnderFifteenSecondsDoesNotRestoreBuiltIn() {
+    func testBriefCableFlickerUnderFiveSecondsDoesNotRestoreBuiltIn() {
         let backend = MockDisplayBackend(builtInEnabled: false, externalCount: 1)
         let recorder = TriggerRecorder()
         let clock = TestClock()
-        let watchdog = makeWatchdog(backend: backend, recorder: recorder, disconnectGracePeriod: 15.0, pollInterval: 0, clock: clock)
+        let watchdog = makeWatchdog(backend: backend, recorder: recorder, disconnectGracePeriod: 5.0, pollInterval: 0, clock: clock)
 
         // Cable flickers out and WindowServer spawns a headless virtual placeholder.
         backend.externalCount = 0
@@ -520,14 +520,14 @@ final class FailsafeWatchdogTests: XCTestCase {
         XCTAssertFalse(backend.builtInEnabled, "Must NOT restore immediately on disconnect")
         XCTAssertTrue(watchdog.isGraceCountdownActive)
 
-        // Still disconnected at 14 seconds -> still waiting.
-        clock.advance(by: 14.0)
+        // Still disconnected at 4 seconds -> still waiting.
+        clock.advance(by: 4.0)
         watchdog.handleDisplayReconfiguration()
         watchdog.waitUntilIdle()
-        XCTAssertFalse(backend.builtInEnabled, "Must NOT restore before 15 seconds elapse")
+        XCTAssertFalse(backend.builtInEnabled, "Must NOT restore before 5 seconds elapse")
         XCTAssertEqual(backend.enableCalls, 0)
 
-        // Cable reconnects before 15s -> countdown cancels cleanly.
+        // Cable reconnects before 5s -> countdown cancels cleanly.
         backend.externalCount = 1
         backend.virtualExternalCount = 0
         clock.advance(by: 0.5)
@@ -543,7 +543,7 @@ final class FailsafeWatchdogTests: XCTestCase {
         let backend = MockDisplayBackend(builtInEnabled: false, externalCount: 1)
         let recorder = TriggerRecorder()
         let clock = TestClock()
-        let watchdog = makeWatchdog(backend: backend, recorder: recorder, disconnectGracePeriod: 15.0, pollInterval: 0, clock: clock)
+        let watchdog = makeWatchdog(backend: backend, recorder: recorder, disconnectGracePeriod: 5.0, pollInterval: 0, clock: clock)
 
         // Cable physically unplugged, macOS spawns virtual Display 11.
         backend.externalCount = 0
@@ -552,8 +552,8 @@ final class FailsafeWatchdogTests: XCTestCase {
         watchdog.waitUntilIdle()
         XCTAssertFalse(backend.builtInEnabled)
 
-        // Advance past 15s -> must restore Built-in Display.
-        clock.advance(by: 15.0)
+        // Advance past 5s -> must restore Built-in Display.
+        clock.advance(by: 5.0)
         watchdog.handleDisplayReconfiguration()
         watchdog.waitUntilIdle()
 

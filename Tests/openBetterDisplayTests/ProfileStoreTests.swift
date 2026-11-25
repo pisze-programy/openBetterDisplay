@@ -723,4 +723,33 @@ final class ProfileStoreTests: XCTestCase {
         await store.processConnectedDisplaysNow()
         XCTAssertTrue(backend.builtInEnabled, "Next reconnect must keep Built-in ON after user toggled it ON")
     }
+
+    func testKnownMonitorReconnectingInMirrorModeStillRestoresAndAutoDisablesBuiltIn() async {
+        let store = makeStore()
+        store.saveProfile(Fixture.fullProfile(autoDisableBuiltIn: true, builtInEnabled: false))
+
+        // Case 1: External reconnects as mirror master (Built-in mirroring External -> external has isMirrored=true, mirrorMasterID=nil).
+        backend.builtInEnabled = true
+        backend.displays = [Fixture.builtIn(), Fixture.external(isMirrored: true)]
+        await store.processConnectedDisplaysNow()
+        XCTAssertFalse(backend.builtInEnabled, "Known monitor reconnecting as mirror master must auto-disable Built-in")
+        XCTAssertEqual(events.events, [.restored(storageKey: Fixture.ident.storageKey, displayName: "LC49G95T")])
+
+        // Unplug
+        backend.displays = [Fixture.builtIn()]
+        backend.builtInEnabled = true
+        await store.processConnectedDisplaysNow()
+
+        // Case 2: External reconnects as mirror slave (External mirroring Built-in -> mirrorMasterID=1).
+        let slaveExternal = DisplayInfo(
+            id: 77, identifier: Fixture.ident, name: "LC49G95T", isBuiltIn: false, isMain: false,
+            isOnline: true, isEnabled: true, isMirrored: true, mirrorMasterID: 1,
+            supportsHDR: true, isHDREnabled: false, currentMode: Fixture.m60,
+            availableModes: Fixture.allModes, supportsDDC: true, supportsRotation: true
+        )
+        backend.displays = [Fixture.builtIn(), slaveExternal]
+        await store.processConnectedDisplaysNow()
+        XCTAssertTrue(log.entries.contains("mirror"), "Mirror slave must be un-mirrored before restoring")
+        XCTAssertFalse(backend.builtInEnabled, "Known monitor reconnecting as mirror slave must auto-disable Built-in")
+    }
 }

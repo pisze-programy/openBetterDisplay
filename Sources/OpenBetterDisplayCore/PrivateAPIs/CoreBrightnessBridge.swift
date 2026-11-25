@@ -124,7 +124,7 @@ public final class CoreBrightnessBridge: NightShiftBackendProtocol, @unchecked S
     /// itself available, the display is online, and the display is **not** in HDR mode (where macOS
     /// suspends Night Shift — the warm overlay fallback must be used instead).
     public func isSupported(displayID: CGDirectDisplayID) -> Bool {
-        guard CGDisplayIsOnline(displayID) != 0 || CGDisplayIsActive(displayID) != 0 else { return false }
+        guard CGDisplayIsOnline(displayID) == 1 || CGDisplayIsActive(displayID) == 1 else { return false }
         guard let status = nativeStatus(), status.available else { return false }
         if CoreDisplayBridge.shared.isHDREnabled(displayID: displayID) { return false }
         return true

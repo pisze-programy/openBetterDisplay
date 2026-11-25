@@ -1,5 +1,8 @@
 import CoreGraphics
 import Foundation
+import os
+
+private let profileLogger = Logger(subsystem: "com.piszeprogramy.openbetterdisplay", category: "profiles")
 
 /// Events emitted by `ProfileStore` during hotplug processing.
 public enum ProfileHotplugEvent: Equatable, Sendable {
@@ -206,9 +209,15 @@ public final class ProfileStore {
         let retryDelay = builtInDisableRetryDelay
 
         let displays = await onHardwareQueue { backend.getOnlineDisplays() }
-        let externals = displays.filter {
-            !$0.isBuiltIn && !$0.isVirtual && !$0.identifier.isVirtualSentinel &&
-                $0.isOnline && $0.isEnabled && !$0.isMirrored
+        // Consider all online & enabled physical external displays.
+        // - Known monitors (already in `profiles`) are ALWAYS restored even if macOS reconnected them in a
+        //   mirror set (e.g. Built-in mirroring the external display): otherwise auto-disable Built-in never fires.
+        // - Unseen monitors that are currently mirrored are skipped so we don't capture a slaved mirror resolution.
+        let externals = displays.filter { display in
+            guard !display.isBuiltIn && !display.isVirtual && !display.identifier.isVirtualSentinel else { return false }
+            guard display.isOnline && display.isEnabled else { return false }
+            if display.isMirrored && profiles[display.identifier.storageKey] == nil { return false }
+            return true
         }
         let currentKeys = Set(externals.map { $0.identifier.storageKey })
         let newlyConnected = externals.filter { !connectedKeys.contains($0.identifier.storageKey) }
@@ -218,7 +227,8 @@ public final class ProfileStore {
             let key = display.identifier.storageKey
             if let profile = profiles[key] {
                 if profile.autoRestoreOnConnect {
-                    // Deterministic order: mode → HDR → brightness → volume/mute → main → rotation → built-in.
+                    profileLogger.notice("Restoring profile for \(display.name, privacy: .public) [\(key, privacy: .public)] mirrored=\(display.isMirrored, privacy: .public) autoDisableBuiltIn=\(profile.autoDisableBuiltInOnConnect, privacy: .public) builtInEnabled=\(profile.builtInDisplayEnabled, privacy: .public)")
+                    // Deterministic order: (unmirror if slave) → mode → HDR → brightness → volume/mute → main → rotation → built-in.
                     await onHardwareQueue { ProfileStore.restoreModeAndHDR(profile: profile, display: display, backend: backend) }
                     brightnessApplier?(display.id, profile.combinedBrightness)
                     await onHardwareQueue {
@@ -232,6 +242,7 @@ public final class ProfileStore {
                     }
                     onHotplugEvent?(.restored(storageKey: key, displayName: display.name))
                 } else {
+                    profileLogger.notice("Skipping profile restore for \(display.name, privacy: .public) (autoRestoreOnConnect=false)")
                     onHotplugEvent?(.skippedAutoRestoreDisabled(storageKey: key))
                 }
             } else {
@@ -257,6 +268,10 @@ public final class ProfileStore {
 
     private nonisolated static func restoreModeAndHDR(profile: MonitorProfile, display: DisplayInfo, backend: DisplayBackendProtocol) {
         let id = display.id
+        if display.mirrorMasterID != nil {
+            profileLogger.notice("Un-mirroring slave external display \(id, privacy: .public) before restoring profile")
+            try? backend.setDisplayMirror(displayID: id, mirrorOf: nil)
+        }
         if let mode = closestMode(for: profile, in: display.availableModes),
            !isSameMode(mode, display.currentMode) {
             try? backend.setDisplayMode(displayID: id, mode: mode)
@@ -292,8 +307,10 @@ public final class ProfileStore {
             for attempt in 0..<3 {
                 do {
                     try backend.setBuiltInDisplayEnabled(false)
+                    profileLogger.notice("Auto-disabled Built-in Display for \(display.name, privacy: .public) on attempt \(attempt + 1, privacy: .public)")
                     break
                 } catch {
+                    profileLogger.warning("Auto-disable Built-in attempt \(attempt + 1, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
                     if attempt < 2, builtInDisableRetryDelay > 0 {
                         Thread.sleep(forTimeInterval: builtInDisableRetryDelay)
                     }
