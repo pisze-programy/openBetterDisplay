@@ -40,6 +40,8 @@ public final class DisplayManager: DisplayBackendProtocol, @unchecked Sendable {
         self.skyLight = skyLight
         self.coreDisplay = coreDisplay
         self.ddcAvailability = ddcAvailability ?? { IOAVServiceBridge.shared.hasService(for: $0) }
+        // Eagerly cache the Built-in Display ID while it is discoverable.
+        _ = builtInDisplayID()
     }
 
     deinit {
@@ -65,12 +67,30 @@ public final class DisplayManager: DisplayBackendProtocol, @unchecked Sendable {
         return Array(ids.prefix(Int(min(count, 32))))
     }
 
-    /// Online & active external displays (the set the Single-Display Guard and the failsafe rely on).
+    /// Online & active **physical** external displays (the set the Single-Display Guard and failsafe rely on).
+    /// Excludes virtual/headless placeholder displays spawned by WindowServer when all physical displays vanish.
     public func activeExternalDisplayIDs() -> [CGDirectDisplayID] {
         let active = Set(Self.activeDisplayIDs())
         return Self.onlineDisplayIDs().filter { id in
-            CGDisplayIsBuiltin(id) != 1 && (active.contains(id) || CGDisplayIsActive(id) != 0)
+            CGDisplayIsBuiltin(id) != 1 &&
+                !isVirtualDisplay(displayID: id) &&
+                (active.contains(id) || CGDisplayIsActive(id) != 0)
         }
+    }
+
+    /// `true` if `displayID` is a virtual/headless placeholder framebuffer rather than a real physical display.
+    public func isVirtualDisplay(displayID: CGDirectDisplayID) -> Bool {
+        guard CGDisplayIsBuiltin(displayID) != 1 else { return false }
+        return Self.isVirtualDisplay(
+            vendor: CGDisplayVendorNumber(displayID),
+            model: CGDisplayModelNumber(displayID),
+            isVirtualDeviceFlag: coreDisplay.isVirtualDevice(displayID: displayID)
+        )
+    }
+
+    /// Pure virtual/placeholder detector (unit-testable).
+    public static func isVirtualDisplay(vendor: UInt32, model: UInt32, isVirtualDeviceFlag: Bool) -> Bool {
+        isVirtualDeviceFlag || DisplayIdentifier.isVirtualSentinel(vendor: vendor, model: model)
     }
 
     /// The Built-in Display ID, even while it is soft-disconnected (resolved via `SLSGetDisplayList`).
@@ -85,8 +105,9 @@ public final class DisplayManager: DisplayBackendProtocol, @unchecked Sendable {
         }
         stateLock.lock()
         defer { stateLock.unlock() }
-        if let cached = cachedBuiltInID, CGDisplayIsBuiltin(cached) == 1 { return cached }
-        return nil
+        // `cachedBuiltInID` was already verified via `CGDisplayIsBuiltin == 1` when discovered;
+        // trust it even if WindowServer temporarily drops the built-in entry during a headless transition.
+        return cachedBuiltInID
     }
 
     /// `true` when the MacBook lid is closed (IOPMrootDomain `AppleClamshellState`).
@@ -102,9 +123,9 @@ public final class DisplayManager: DisplayBackendProtocol, @unchecked Sendable {
     // MARK: - Pure guard helpers (unit-testable)
 
     /// Single-Display Guard: the Built-in Display may only be disabled while at least one other online and
-    /// enabled external display exists.
+    /// enabled **physical** external display exists (virtual/headless placeholders never satisfy the guard).
     public static func canDisableBuiltIn(displays: [DisplayInfo]) -> Bool {
-        displays.contains { !$0.isBuiltIn && $0.isOnline && $0.isEnabled }
+        displays.contains { !$0.isBuiltIn && !$0.isVirtual && $0.isOnline && $0.isEnabled }
     }
 
     /// Normalizes any rotation angle to `0/90/180/270`, or `nil` if it is not a multiple of 90°.
@@ -161,6 +182,7 @@ public final class DisplayManager: DisplayBackendProtocol, @unchecked Sendable {
         lidClosed: Bool
     ) -> DisplayInfo {
         let isBuiltIn = CGDisplayIsBuiltin(id) == 1
+        let isVirtual = !isBuiltIn && isVirtualDisplay(displayID: id)
         let isActive = activeSet.contains(id) || CGDisplayIsActive(id) != 0
         let mirrorMaster = CGDisplayMirrorsDisplay(id)
         let inMirrorSet = CGDisplayIsInMirrorSet(id) != 0
@@ -169,13 +191,14 @@ public final class DisplayManager: DisplayBackendProtocol, @unchecked Sendable {
         let isOnline = onlineSet.contains(id) || (isBuiltIn && !lidClosed)
 
         let (modes, current) = isEnabled ? Self.enumerateModes(displayID: id) : ([], nil)
-        let supportsHDR = !isBuiltIn && isEnabled && coreDisplay.supportsHDR(displayID: id)
+        let supportsHDR = !isBuiltIn && !isVirtual && isEnabled && coreDisplay.supportsHDR(displayID: id)
 
         return DisplayInfo(
             id: id,
             identifier: DisplayIdentifier(displayID: id),
             name: displayName(for: id, isBuiltIn: isBuiltIn),
             isBuiltIn: isBuiltIn,
+            isVirtual: isVirtual,
             isMain: CGDisplayIsMain(id) != 0,
             isOnline: isOnline,
             isEnabled: isEnabled,
@@ -186,8 +209,8 @@ public final class DisplayManager: DisplayBackendProtocol, @unchecked Sendable {
             isHDREnabled: supportsHDR && coreDisplay.isHDREnabled(displayID: id),
             currentMode: current,
             availableModes: modes,
-            supportsDDC: !isBuiltIn && isEnabled && ddcAvailability(id),
-            supportsRotation: isEnabled && supportsRotation(displayID: id)
+            supportsDDC: !isBuiltIn && !isVirtual && isEnabled && ddcAvailability(id),
+            supportsRotation: isEnabled && !isVirtual && supportsRotation(displayID: id)
         )
     }
 

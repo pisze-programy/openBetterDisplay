@@ -119,6 +119,17 @@ public final class CoreDisplayBridge: @unchecked Sendable {
 
     // MARK: Display info
 
+    /// `true` when CoreDisplay marks this display as a virtual/headless framebuffer
+    /// (`kCGDisplayIsVirtualDevice` or `DisplayIsSLVDExclusive`).
+    public func isVirtualDevice(displayID: CGDirectDisplayID) -> Bool {
+        guard let fn = createInfoDictionary,
+              let dict = fn(displayID)?.takeRetainedValue() as? [String: Any]
+        else { return false }
+        if (dict["kCGDisplayIsVirtualDevice"] as? NSNumber)?.boolValue == true { return true }
+        if (dict["DisplayIsSLVDExclusive"] as? NSNumber)?.boolValue == true { return true }
+        return false
+    }
+
     /// Localized product name from `CoreDisplay_DisplayCreateInfoDictionary` (thread-safe, works for
     /// displays without an `NSScreen`, e.g. a soft-disconnected Built-in panel returns `nil` here though).
     public func productName(displayID: CGDirectDisplayID) -> String? {

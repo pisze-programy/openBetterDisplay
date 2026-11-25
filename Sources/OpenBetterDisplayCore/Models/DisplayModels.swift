@@ -20,6 +20,21 @@ public struct DisplayIdentifier: Codable, Equatable, Hashable, Sendable {
         }
     }
 
+    /// `true` when vendor/model match known macOS headless/virtual/invalid display sentinels
+    /// (`'unkn'`/`'virt'`, `0xFFFFFFFF`, or `0`/`0`) that do not represent a physical monitor.
+    public var isVirtualSentinel: Bool {
+        Self.isVirtualSentinel(vendor: vendorNumber, model: modelNumber)
+    }
+
+    public static func isVirtualSentinel(vendor: UInt32, model: UInt32) -> Bool {
+        let unknownVendor: UInt32 = 0x756E6B6E // 'unkn' (kDisplayVendorIDUnknown)
+        let virtualModel: UInt32 = 0x76697274  // 'virt' (WindowServer headless/virtual display)
+        if vendor == unknownVendor && model == virtualModel { return true }
+        if vendor == UInt32.max || model == UInt32.max { return true }
+        if vendor == 0 && model == 0 { return true }
+        return false
+    }
+
     public init(
         vendorNumber: UInt32,
         modelNumber: UInt32,
@@ -89,6 +104,7 @@ public struct DisplayInfo: Codable, Equatable, Hashable, Sendable, Identifiable 
     public let identifier: DisplayIdentifier
     public let name: String
     public let isBuiltIn: Bool
+    public let isVirtual: Bool
     public let isMain: Bool
     public let isOnline: Bool
     public let isEnabled: Bool
@@ -107,6 +123,7 @@ public struct DisplayInfo: Codable, Equatable, Hashable, Sendable, Identifiable 
         identifier: DisplayIdentifier,
         name: String,
         isBuiltIn: Bool,
+        isVirtual: Bool = false,
         isMain: Bool,
         isOnline: Bool,
         isEnabled: Bool,
@@ -124,6 +141,7 @@ public struct DisplayInfo: Codable, Equatable, Hashable, Sendable, Identifiable 
         self.identifier = identifier
         self.name = name
         self.isBuiltIn = isBuiltIn
+        self.isVirtual = isVirtual
         self.isMain = isMain
         self.isOnline = isOnline
         self.isEnabled = isEnabled

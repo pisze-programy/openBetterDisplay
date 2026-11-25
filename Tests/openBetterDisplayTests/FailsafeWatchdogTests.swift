@@ -12,6 +12,8 @@ private final class MockDisplayBackend: DisplayBackendProtocol, @unchecked Senda
     private let lock = NSLock()
     private var _builtInEnabled: Bool
     private var _externalCount: Int
+    private var _virtualExternalCount: Int = 0
+    private var _externalSleeping: Bool = false
     private var _failEnable = false
     private var _enableCalls = 0
     private var _disableCalls = 0
@@ -39,6 +41,16 @@ private final class MockDisplayBackend: DisplayBackendProtocol, @unchecked Senda
         set { locked { _externalCount = newValue } }
     }
 
+    var virtualExternalCount: Int {
+        get { locked { _virtualExternalCount } }
+        set { locked { _virtualExternalCount = newValue } }
+    }
+
+    var externalSleeping: Bool {
+        get { locked { _externalSleeping } }
+        set { locked { _externalSleeping = newValue } }
+    }
+
     var failEnable: Bool {
         get { locked { _failEnable } }
         set { locked { _failEnable = newValue } }
@@ -50,13 +62,16 @@ private final class MockDisplayBackend: DisplayBackendProtocol, @unchecked Senda
     var getOnlineDisplaysCalls: Int { locked { _getOnlineDisplaysCalls } }
 
     func getOnlineDisplays() -> [DisplayInfo] {
-        let (enabled, externals) = locked { () -> (Bool, Int) in
+        let (enabled, externals, virtuals, sleeping) = locked { () -> (Bool, Int, Int, Bool) in
             _getOnlineDisplaysCalls += 1
-            return (_builtInEnabled, _externalCount)
+            return (_builtInEnabled, _externalCount, _virtualExternalCount, _externalSleeping)
         }
         var list = [makeDisplay(id: 1, builtIn: true, enabled: enabled, main: externals == 0)]
         for index in 0..<externals {
-            list.append(makeDisplay(id: CGDirectDisplayID(100 + index), builtIn: false, enabled: true, main: index == 0))
+            list.append(makeDisplay(id: CGDirectDisplayID(100 + index), builtIn: false, enabled: !sleeping, online: true, main: index == 0))
+        }
+        for index in 0..<virtuals {
+            list.append(makeDisplay(id: CGDirectDisplayID(200 + index), builtIn: false, virtual: true, enabled: true, online: true, main: externals == 0 && index == 0))
         }
         return list
     }
@@ -95,16 +110,41 @@ private final class MockDisplayBackend: DisplayBackendProtocol, @unchecked Senda
     }
 }
 
-private func makeDisplay(id: CGDirectDisplayID, builtIn: Bool, enabled: Bool, online: Bool = true, main: Bool = false) -> DisplayInfo {
+private func makeDisplay(id: CGDirectDisplayID, builtIn: Bool, virtual: Bool = false, enabled: Bool, online: Bool = true, main: Bool = false) -> DisplayInfo {
     DisplayInfo(
         id: id,
-        identifier: DisplayIdentifier(vendorNumber: builtIn ? 1552 : 19501, modelNumber: builtIn ? 41038 : 28754, serialNumber: id),
-        name: builtIn ? "Built-in Display" : "External \(id)",
+        identifier: virtual
+            ? DisplayIdentifier(vendorNumber: 0x756E6B6E, modelNumber: 0x76697274, serialNumber: 0)
+            : DisplayIdentifier(vendorNumber: builtIn ? 1552 : 19501, modelNumber: builtIn ? 41038 : 28754, serialNumber: id),
+        name: builtIn ? "Built-in Display" : (virtual ? "Display \(id)" : "External \(id)"),
         isBuiltIn: builtIn,
+        isVirtual: virtual,
         isMain: main,
         isOnline: online,
         isEnabled: enabled
     )
+}
+
+/// Thread-safe manual clock for deterministic grace-period tests.
+private final class TestClock: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _current: Date
+
+    init(_ start: Date = Date(timeIntervalSinceReferenceDate: 1_000_000)) {
+        _current = start
+    }
+
+    var current: Date {
+        lock.lock()
+        defer { lock.unlock() }
+        return _current
+    }
+
+    func advance(by seconds: TimeInterval) {
+        lock.lock()
+        _current = _current.addingTimeInterval(seconds)
+        lock.unlock()
+    }
 }
 
 /// Thread-safe recorder for `onRestore` callbacks (invoked on the watchdog queue).
@@ -139,15 +179,22 @@ final class FailsafeWatchdogTests: XCTestCase {
     private func makeWatchdog(
         backend: MockDisplayBackend,
         recorder: TriggerRecorder,
+        notificationCenter: NotificationCenter = NotificationCenter(),
+        disconnectGracePeriod: TimeInterval = 0,
+        pollInterval: TimeInterval = 0,
         wakeRecheckDelays: [TimeInterval] = [],
+        clock: TestClock? = nil,
         queue: DispatchQueue? = nil
     ) -> FailsafeWatchdog {
         let watchdog = FailsafeWatchdog(
             backend: backend,
-            notificationCenter: NotificationCenter(),
+            notificationCenter: notificationCenter,
             observeDisplayReconfiguration: false,
+            disconnectGracePeriod: disconnectGracePeriod,
+            pollInterval: pollInterval,
             wakeRecheckDelays: wakeRecheckDelays,
             reconfigurationRecheckDelay: 0,
+            now: { clock?.current ?? Date() },
             queue: queue,
             onRestore: { recorder.record($0) }
         )
@@ -283,6 +330,8 @@ final class FailsafeWatchdogTests: XCTestCase {
             backend: backend,
             notificationCenter: center,
             observeDisplayReconfiguration: false,
+            disconnectGracePeriod: 0,
+            pollInterval: 0,
             wakeRecheckDelays: [],
             reconfigurationRecheckDelay: 0,
             onRestore: { recorder.record($0) }
@@ -417,5 +466,188 @@ final class FailsafeWatchdogTests: XCTestCase {
         XCTAssertFalse(watchdog.checkNow(trigger: .manualCheck))
         XCTAssertEqual(backend.getOnlineDisplaysCalls, 0, "Cheap isBuiltInDisplayEnabled() short-circuits the check")
         XCTAssertEqual(backend.enableCalls, 0)
+    }
+
+    // MARK: Virtual placeholder displays & 15s grace period
+
+    func testDefaultsUseFifteenSecondGracePeriodAndOneSecondHeartbeat() {
+        XCTAssertEqual(FailsafeWatchdog.defaultDisconnectGracePeriod, 15.0)
+        XCTAssertEqual(FailsafeWatchdog.defaultPollInterval, 1.0)
+    }
+
+    func testVirtualHeadlessDisplayDoesNotPreventRestoreOrSatisfySingleDisplayGuard() {
+        let builtIn = makeDisplay(id: 1, builtIn: true, enabled: false)
+        let virtualHeadless = makeDisplay(id: 11, builtIn: false, virtual: true, enabled: true)
+        let physicalExternal = makeDisplay(id: 3, builtIn: false, virtual: false, enabled: true)
+
+        XCTAssertTrue(
+            FailsafeWatchdog.shouldRestoreBuiltIn(builtInEnabled: false, displays: [builtIn, virtualHeadless]),
+            "WindowServer headless virtual placeholder must NOT fool the failsafe"
+        )
+        XCTAssertFalse(
+            DisplayManager.canDisableBuiltIn(displays: [builtIn, virtualHeadless]),
+            "Virtual placeholder must NOT satisfy the Single-Display Guard"
+        )
+        XCTAssertFalse(
+            FailsafeWatchdog.shouldRestoreBuiltIn(builtInEnabled: false, displays: [builtIn, virtualHeadless, physicalExternal]),
+            "A real physical external display still prevents restore"
+        )
+
+        // End-to-end unplug where macOS spawns a headless virtual placeholder display:
+        let backend = MockDisplayBackend(builtInEnabled: false, externalCount: 1)
+        let recorder = TriggerRecorder()
+        let watchdog = makeWatchdog(backend: backend, recorder: recorder, disconnectGracePeriod: 0)
+        backend.externalCount = 0
+        backend.virtualExternalCount = 1 // macOS spawns Display 11 ('unkn'/'virt')
+        watchdog.handleDisplayReconfiguration()
+        watchdog.waitUntilIdle()
+
+        XCTAssertTrue(backend.builtInEnabled, "Built-in MUST restore when only a virtual placeholder remains")
+        XCTAssertEqual(recorder.triggers, [.displayReconfiguration])
+    }
+
+    func testBriefCableFlickerUnderFifteenSecondsDoesNotRestoreBuiltIn() {
+        let backend = MockDisplayBackend(builtInEnabled: false, externalCount: 1)
+        let recorder = TriggerRecorder()
+        let clock = TestClock()
+        let watchdog = makeWatchdog(backend: backend, recorder: recorder, disconnectGracePeriod: 15.0, pollInterval: 0, clock: clock)
+
+        // Cable flickers out and WindowServer spawns a headless virtual placeholder.
+        backend.externalCount = 0
+        backend.virtualExternalCount = 1
+        watchdog.handleDisplayReconfiguration()
+        watchdog.waitUntilIdle()
+        XCTAssertFalse(backend.builtInEnabled, "Must NOT restore immediately on disconnect")
+        XCTAssertTrue(watchdog.isGraceCountdownActive)
+
+        // Still disconnected at 14 seconds -> still waiting.
+        clock.advance(by: 14.0)
+        watchdog.handleDisplayReconfiguration()
+        watchdog.waitUntilIdle()
+        XCTAssertFalse(backend.builtInEnabled, "Must NOT restore before 15 seconds elapse")
+        XCTAssertEqual(backend.enableCalls, 0)
+
+        // Cable reconnects before 15s -> countdown cancels cleanly.
+        backend.externalCount = 1
+        backend.virtualExternalCount = 0
+        clock.advance(by: 0.5)
+        watchdog.handleDisplayReconfiguration()
+        watchdog.waitUntilIdle()
+        XCTAssertFalse(backend.builtInEnabled)
+        XCTAssertFalse(watchdog.isGraceCountdownActive)
+        XCTAssertEqual(backend.enableCalls, 0)
+        XCTAssertTrue(recorder.triggers.isEmpty)
+    }
+
+    func testSustainedCableDisconnectRestoresAfterGracePeriod() {
+        let backend = MockDisplayBackend(builtInEnabled: false, externalCount: 1)
+        let recorder = TriggerRecorder()
+        let clock = TestClock()
+        let watchdog = makeWatchdog(backend: backend, recorder: recorder, disconnectGracePeriod: 15.0, pollInterval: 0, clock: clock)
+
+        // Cable physically unplugged, macOS spawns virtual Display 11.
+        backend.externalCount = 0
+        backend.virtualExternalCount = 1
+        watchdog.handleDisplayReconfiguration()
+        watchdog.waitUntilIdle()
+        XCTAssertFalse(backend.builtInEnabled)
+
+        // Advance past 15s -> must restore Built-in Display.
+        clock.advance(by: 15.0)
+        watchdog.handleDisplayReconfiguration()
+        watchdog.waitUntilIdle()
+
+        XCTAssertTrue(backend.builtInEnabled)
+        XCTAssertEqual(backend.enableCalls, 1)
+        XCTAssertFalse(watchdog.isGraceCountdownActive)
+        XCTAssertEqual(recorder.triggers, [.displayReconfiguration])
+    }
+
+    func testHeartbeatPollingRestoresEvenWithoutReconfigurationCallback() {
+        let backend = MockDisplayBackend(builtInEnabled: false, externalCount: 1)
+        let recorder = TriggerRecorder()
+        let watchdog = makeWatchdog(
+            backend: backend,
+            recorder: recorder,
+            disconnectGracePeriod: 0.12,
+            pollInterval: 0.05
+        )
+        watchdog.start()
+        watchdog.waitUntilIdle()
+        XCTAssertFalse(backend.builtInEnabled)
+
+        // External display vanishes with NO handleDisplayReconfiguration() call at all!
+        backend.externalCount = 0
+        backend.virtualExternalCount = 1
+
+        XCTAssertTrue(
+            waitUntil(timeout: 2.0) { backend.builtInEnabled },
+            "Periodic heartbeat must catch silent cable unplugs and restore Built-in after the grace period"
+        )
+        watchdog.waitUntilIdle()
+        XCTAssertEqual(recorder.triggers, [.displayReconfiguration])
+    }
+
+    func testIdleDisplaySleepWithCableConnectedDoesNotWakeBuiltIn() {
+        let center = NotificationCenter()
+        let backend = MockDisplayBackend(builtInEnabled: false, externalCount: 1)
+        let recorder = TriggerRecorder()
+        let clock = TestClock()
+        let watchdog = makeWatchdog(
+            backend: backend,
+            recorder: recorder,
+            notificationCenter: center,
+            disconnectGracePeriod: 15.0,
+            pollInterval: 0,
+            clock: clock
+        )
+        watchdog.start()
+        watchdog.waitUntilIdle()
+
+        // macOS puts displays to idle sleep while the external cable stays plugged in (online, asleep -> enabled == false).
+        center.post(name: NSWorkspace.screensDidSleepNotification, object: nil)
+        backend.externalSleeping = true
+        watchdog.handleDisplayReconfiguration()
+        watchdog.waitUntilIdle()
+        clock.advance(by: 60.0)
+        watchdog.handleDisplayReconfiguration()
+        watchdog.waitUntilIdle()
+
+        XCTAssertFalse(backend.builtInEnabled, "Idle display sleep with cable still online must NOT wake Built-in")
+        XCTAssertFalse(watchdog.isGraceCountdownActive)
+
+        // If cable is physically unplugged while screens were asleep (0 online physical externals), failsafe proceeds.
+        backend.externalCount = 0
+        backend.externalSleeping = false
+        backend.virtualExternalCount = 1
+        watchdog.handleDisplayReconfiguration()
+        watchdog.waitUntilIdle()
+        clock.advance(by: 15.0)
+        watchdog.handleDisplayReconfiguration()
+        watchdog.waitUntilIdle()
+
+        XCTAssertTrue(backend.builtInEnabled, "Unplugging cable during display sleep MUST still restore Built-in")
+    }
+
+    func testEmergencyAndQuitBypassGracePeriod() {
+        let backend = MockDisplayBackend(builtInEnabled: false, externalCount: 0)
+        let recorder = TriggerRecorder()
+        let clock = TestClock()
+        let watchdog = makeWatchdog(backend: backend, recorder: recorder, disconnectGracePeriod: 15.0, pollInterval: 0, clock: clock)
+
+        watchdog.handleDisplayReconfiguration()
+        watchdog.waitUntilIdle()
+        XCTAssertFalse(backend.builtInEnabled)
+        XCTAssertTrue(watchdog.isGraceCountdownActive)
+
+        XCTAssertTrue(watchdog.emergencyRestoreAll())
+        XCTAssertTrue(backend.builtInEnabled)
+        XCTAssertFalse(watchdog.isGraceCountdownActive)
+        XCTAssertEqual(recorder.triggers, [.emergency])
+
+        backend.builtInEnabled = false
+        XCTAssertTrue(watchdog.restoreBuiltInForQuit())
+        XCTAssertTrue(backend.builtInEnabled)
+        XCTAssertEqual(recorder.triggers, [.emergency, .quit])
     }
 }

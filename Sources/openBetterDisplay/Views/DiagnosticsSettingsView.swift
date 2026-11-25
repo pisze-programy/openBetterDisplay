@@ -10,7 +10,7 @@ struct DiagnosticsSettingsView: View {
     }
 
     private var activeDisplays: [DisplayInfo] {
-        controller.displays.filter { $0.isEnabled }
+        controller.displays.filter { !$0.isVirtual && $0.isEnabled }
     }
 
     var body: some View {

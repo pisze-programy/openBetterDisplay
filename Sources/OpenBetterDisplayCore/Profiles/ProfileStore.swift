@@ -24,6 +24,7 @@ public final class ProfileStore {
 
     public let fileURL: URL
     public let debounceInterval: TimeInterval
+    private let builtInDisableRetryDelay: TimeInterval
 
     /// Applies combined brightness (0...1) to a display (wired to `CombinedBrightnessController`).
     public var brightnessApplier: ((CGDirectDisplayID, Double) -> Void)?
@@ -46,12 +47,14 @@ public final class ProfileStore {
     public init(
         fileURL: URL? = nil,
         debounceInterval: TimeInterval = ProfileStore.defaultDebounceInterval,
+        builtInDisableRetryDelay: TimeInterval = 0.5,
         displayBackend: DisplayBackendProtocol? = nil,
         ddcBackend: DDCBackendProtocol? = nil,
         brightnessApplier: ((CGDirectDisplayID, Double) -> Void)? = nil
     ) {
         self.fileURL = fileURL ?? ProfileStore.defaultFileURL
         self.debounceInterval = debounceInterval
+        self.builtInDisableRetryDelay = max(0, builtInDisableRetryDelay)
         self.displayBackend = displayBackend
         self.ddcBackend = ddcBackend
         self.brightnessApplier = brightnessApplier
@@ -83,6 +86,8 @@ public final class ProfileStore {
     }
 
     public func saveProfile(_ profile: MonitorProfile) {
+        // Never persist headless/virtual placeholder displays as monitor profiles.
+        guard !profile.identifier.isVirtualSentinel else { return }
         var copy = profile
         copy.updatedAt = Date()
         profiles[copy.identifier.storageKey] = copy
@@ -198,9 +203,13 @@ public final class ProfileStore {
     private func runPass() async {
         guard let backend = displayBackend else { return }
         let ddc = ddcBackend
+        let retryDelay = builtInDisableRetryDelay
 
         let displays = await onHardwareQueue { backend.getOnlineDisplays() }
-        let externals = displays.filter { !$0.isBuiltIn && $0.isOnline && $0.isEnabled && !$0.isMirrored }
+        let externals = displays.filter {
+            !$0.isBuiltIn && !$0.isVirtual && !$0.identifier.isVirtualSentinel &&
+                $0.isOnline && $0.isEnabled && !$0.isMirrored
+        }
         let currentKeys = Set(externals.map { $0.identifier.storageKey })
         let newlyConnected = externals.filter { !connectedKeys.contains($0.identifier.storageKey) }
         connectedKeys = currentKeys
@@ -213,7 +222,13 @@ public final class ProfileStore {
                     await onHardwareQueue { ProfileStore.restoreModeAndHDR(profile: profile, display: display, backend: backend) }
                     brightnessApplier?(display.id, profile.combinedBrightness)
                     await onHardwareQueue {
-                        ProfileStore.restoreAudioAndLayout(profile: profile, display: display, backend: backend, ddc: ddc)
+                        ProfileStore.restoreAudioAndLayout(
+                            profile: profile,
+                            display: display,
+                            backend: backend,
+                            ddc: ddc,
+                            builtInDisableRetryDelay: retryDelay
+                        )
                     }
                     onHotplugEvent?(.restored(storageKey: key, displayName: display.name))
                 } else {
@@ -231,7 +246,13 @@ public final class ProfileStore {
     public func restore(profile: MonitorProfile, to display: DisplayInfo, backend: DisplayBackendProtocol) {
         ProfileStore.restoreModeAndHDR(profile: profile, display: display, backend: backend)
         brightnessApplier?(display.id, profile.combinedBrightness)
-        ProfileStore.restoreAudioAndLayout(profile: profile, display: display, backend: backend, ddc: ddcBackend)
+        ProfileStore.restoreAudioAndLayout(
+            profile: profile,
+            display: display,
+            backend: backend,
+            ddc: ddcBackend,
+            builtInDisableRetryDelay: builtInDisableRetryDelay
+        )
     }
 
     private nonisolated static func restoreModeAndHDR(profile: MonitorProfile, display: DisplayInfo, backend: DisplayBackendProtocol) {
@@ -250,7 +271,8 @@ public final class ProfileStore {
         profile: MonitorProfile,
         display: DisplayInfo,
         backend: DisplayBackendProtocol,
-        ddc: DDCBackendProtocol?
+        ddc: DDCBackendProtocol?,
+        builtInDisableRetryDelay: TimeInterval = 0.5
     ) {
         let id = display.id
         if let ddc = ddc, display.supportsDDC {
@@ -264,9 +286,19 @@ public final class ProfileStore {
             try? backend.setDisplayRotation(displayID: id, rotation: profile.rotation)
         }
         // Built-in: only ever auto-disable when the user explicitly opted in for this monitor.
-        // The backend enforces the single-display guard.
+        // The backend enforces the single-display guard; retry briefly if a prior mode/HDR switch
+        // is still finishing DisplayPort/HDMI link retraining.
         if profile.autoDisableBuiltInOnConnect && !profile.builtInDisplayEnabled {
-            try? backend.setBuiltInDisplayEnabled(false)
+            for attempt in 0..<3 {
+                do {
+                    try backend.setBuiltInDisplayEnabled(false)
+                    break
+                } catch {
+                    if attempt < 2, builtInDisableRetryDelay > 0 {
+                        Thread.sleep(forTimeInterval: builtInDisableRetryDelay)
+                    }
+                }
+            }
         } else if profile.builtInDisplayEnabled && !backend.isBuiltInDisplayEnabled() {
             try? backend.setBuiltInDisplayEnabled(true)
         }
@@ -367,7 +399,8 @@ public final class ProfileStore {
               let decoded = try? makeDecoder().decode([String: MonitorProfile].self, from: data) else {
             return [:]
         }
-        return decoded
+        // Drop any stale virtual/headless placeholder entries captured by earlier versions.
+        return decoded.filter { !$0.value.identifier.isVirtualSentinel }
     }
 
     public func reloadFromDisk() {

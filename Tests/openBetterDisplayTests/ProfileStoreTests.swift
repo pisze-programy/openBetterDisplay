@@ -45,6 +45,7 @@ fileprivate final class MockDisplayBackend: DisplayBackendProtocol, @unchecked S
     private var _builtInEnabled = true
     private var _hdr: [CGDirectDisplayID: Bool] = [:]
     private var _enumerations = 0
+    private var _builtInDisableFailuresRemaining = 0
 
     init(log: CallLog) { self.log = log }
 
@@ -56,6 +57,11 @@ fileprivate final class MockDisplayBackend: DisplayBackendProtocol, @unchecked S
     var builtInEnabled: Bool {
         get { lock.lock(); defer { lock.unlock() }; return _builtInEnabled }
         set { lock.lock(); defer { lock.unlock() }; _builtInEnabled = newValue }
+    }
+
+    var builtInDisableFailuresRemaining: Int {
+        get { lock.lock(); defer { lock.unlock() }; return _builtInDisableFailuresRemaining }
+        set { lock.lock(); defer { lock.unlock() }; _builtInDisableFailuresRemaining = newValue }
     }
 
     var enumerationCount: Int {
@@ -70,6 +76,20 @@ fileprivate final class MockDisplayBackend: DisplayBackendProtocol, @unchecked S
     }
 
     func setBuiltInDisplayEnabled(_ enabled: Bool) throws {
+        if !enabled {
+            let shouldFail: Bool = {
+                lock.lock(); defer { lock.unlock() }
+                if _builtInDisableFailuresRemaining > 0 {
+                    _builtInDisableFailuresRemaining -= 1
+                    return true
+                }
+                return false
+            }()
+            if shouldFail {
+                log.add("builtIn:false:failed")
+                throw DisplayError.configurationFailed(-1)
+            }
+        }
         log.add("builtIn:\(enabled)")
         builtInEnabled = enabled
     }
@@ -199,6 +219,7 @@ final class ProfileStoreTests: XCTestCase {
         let store = ProfileStore(
             fileURL: fileURL,
             debounceInterval: debounce,
+            builtInDisableRetryDelay: 0,
             displayBackend: backend,
             ddcBackend: useDDC ? ddc : nil,
             brightnessApplier: { id, level in log.add("brightness:\(id):\(level)") }
@@ -609,5 +630,97 @@ final class ProfileStoreTests: XCTestCase {
         XCTAssertEqual(store.allProfiles().count, 2)
         XCTAssertNotNil(store.profile(for: Fixture.ident))
         XCTAssertNotNil(store.profile(for: other))
+    }
+
+    // MARK: Virtual display filtering & reconnect memory
+
+    func testVirtualPlaceholderDisplaysAreIgnoredAndPrunedOnLoad() async throws {
+        let store = makeStore()
+        let virtualUnknVirt = DisplayInfo(
+            id: 11,
+            identifier: DisplayIdentifier(vendorNumber: 0x756E6B6E, modelNumber: 0x76697274, serialNumber: 0, uuidString: "81919CFC"),
+            name: "Display 11",
+            isBuiltIn: false,
+            isVirtual: true,
+            isMain: true,
+            isOnline: true,
+            isEnabled: true
+        )
+        let virtualAllOnes = DisplayInfo(
+            id: 5,
+            identifier: DisplayIdentifier(vendorNumber: UInt32.max, modelNumber: UInt32.max, serialNumber: UInt32.max),
+            name: "Display 5",
+            isBuiltIn: false,
+            isVirtual: false, // even if caller forgot isVirtual, sentinel identifier catches it
+            isMain: true,
+            isOnline: true,
+            isEnabled: true
+        )
+
+        backend.displays = [Fixture.builtIn(), virtualUnknVirt, virtualAllOnes]
+        await store.processConnectedDisplaysNow()
+        XCTAssertTrue(store.allProfiles().isEmpty, "Virtual placeholder displays must never be captured as profiles")
+        XCTAssertTrue(events.events.isEmpty)
+
+        // Manually write a legacy JSON containing a stale virtual profile + a real profile and verify load prunes the virtual one.
+        let realProfile = Fixture.fullProfile()
+        let staleVirtual = MonitorProfile(
+            identifier: virtualUnknVirt.identifier,
+            displayName: "Display 11",
+            targetWidth: 1920, targetHeight: 1080, targetPixelWidth: 1920, targetPixelHeight: 1080,
+            targetRefreshRate: 60, targetIsHiDPI: false
+        )
+        let payload: [String: MonitorProfile] = [
+            realProfile.identifier.storageKey: realProfile,
+            staleVirtual.identifier.storageKey: staleVirtual
+        ]
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        try JSONEncoder().encode(payload).write(to: fileURL)
+
+        let reloaded = ProfileStore(fileURL: fileURL)
+        XCTAssertEqual(reloaded.allProfiles().map(\.identifier), [realProfile.identifier])
+    }
+
+    func testAutoDisableBuiltInRetriesTransientFailureOnReconnect() async {
+        let store = makeStore()
+        store.saveProfile(Fixture.fullProfile(autoDisableBuiltIn: true, builtInEnabled: false))
+        backend.displays = [Fixture.builtIn(), Fixture.external()]
+        backend.builtInDisableFailuresRemaining = 2
+
+        await store.processConnectedDisplaysNow()
+
+        XCTAssertFalse(backend.builtInEnabled, "Built-in should be disabled after transient link-training retries")
+        XCTAssertEqual(log.entries.filter { $0 == "builtIn:false:failed" }.count, 2)
+        XCTAssertEqual(log.entries.filter { $0 == "builtIn:false" }.count, 1)
+    }
+
+    func testReconnectRemembersLastBuiltInToggleSetting() async {
+        let store = makeStore()
+        // 1. User connected external monitor and toggled Built-in OFF -> saved in profile.
+        var profile = Fixture.fullProfile(autoDisableBuiltIn: true, builtInEnabled: false)
+        store.saveProfile(profile)
+
+        // 2. Cable unplugged (failsafe restores Built-in ON without modifying the monitor's profile).
+        backend.displays = [Fixture.builtIn()]
+        backend.builtInEnabled = true
+        await store.processConnectedDisplaysNow()
+
+        // 3. Cable reconnected -> Built-in automatically turns OFF again.
+        backend.displays = [Fixture.builtIn(), Fixture.external()]
+        await store.processConnectedDisplaysNow()
+        XCTAssertFalse(backend.builtInEnabled, "Reconnect must auto-disable Built-in when last remembered as OFF")
+
+        // 4. While connected, user toggles Built-in ON -> profile records builtIn=true, autoDisable=false.
+        backend.builtInEnabled = true
+        profile.builtInDisplayEnabled = true
+        profile.autoDisableBuiltInOnConnect = false
+        store.saveProfile(profile)
+
+        // 5. Cable unplugged and reconnected -> Built-in stays ON.
+        backend.displays = [Fixture.builtIn()]
+        await store.processConnectedDisplaysNow()
+        backend.displays = [Fixture.builtIn(), Fixture.external()]
+        await store.processConnectedDisplaysNow()
+        XCTAssertTrue(backend.builtInEnabled, "Next reconnect must keep Built-in ON after user toggled it ON")
     }
 }

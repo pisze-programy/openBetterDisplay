@@ -156,6 +156,7 @@ public final class AppController: ObservableObject {
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
         ) { [weak self] _ in
             Task { @MainActor in
+                self?.profileStore.handleDisplayReconfiguration()
                 self?.refreshDisplays()
                 self?.refreshAccessibilityStatus()
             }
@@ -288,7 +289,7 @@ public final class AppController: ObservableObject {
                 brightnessMethodByDisplay[builtIn.id] = .nativeBuiltIn
             }
         }
-        for display in list where !display.isBuiltIn && display.isEnabled {
+        for display in list where !display.isBuiltIn && !display.isVirtual && display.isEnabled {
             if let method = brightnessController.method(for: display.id) {
                 brightnessMethodByDisplay[display.id] = method
             } else {
@@ -307,10 +308,10 @@ public final class AppController: ObservableObject {
             }
         }
 
-        if let selected = selectedDisplayID, list.contains(where: { $0.id == selected && $0.isEnabled }) {
+        if let selected = selectedDisplayID, list.contains(where: { $0.id == selected && !$0.isVirtual && $0.isEnabled }) {
             // keep selection
         } else {
-            selectedDisplayID = (list.first { !$0.isBuiltIn && $0.isEnabled } ?? list.first { $0.isEnabled })?.id
+            selectedDisplayID = (list.first { !$0.isBuiltIn && !$0.isVirtual && $0.isEnabled } ?? list.first { !$0.isVirtual && $0.isEnabled })?.id
         }
 
         // Profiles just restored on hotplug: mirror their values in the UI and re-probe the hardware
@@ -356,6 +357,8 @@ public final class AppController: ObservableObject {
         for display in displays { brightnessController.forget(displayID: display.id) }
         brightnessMethodByDisplay.removeAll()
         showNotice(title: "Built-in Display Restored", subtitle: trigger == .wake ? "No external display after wake" : "No active external display")
+        // Ensure ProfileStore clears disconnected external monitor keys so the next reconnect auto-restores.
+        profileStore.handleDisplayReconfiguration()
         refreshDisplays(probeDDC: true)
         nightShiftScheduler.applyNow()
     }
@@ -369,9 +372,13 @@ public final class AppController: ObservableObject {
         return fresh.first { $0.id == displayID }
     }
 
-    /// Main external display (if any), otherwise the first enabled external display.
+    /// Main physical external display (if any), otherwise the first enabled physical external display.
     public var primaryExternalDisplay: DisplayInfo? {
-        let externals = displays.filter { !$0.isBuiltIn && $0.isOnline && $0.isEnabled }
+        Self.primaryExternalDisplay(in: displays)
+    }
+
+    private nonisolated static func primaryExternalDisplay(in list: [DisplayInfo]) -> DisplayInfo? {
+        let externals = list.filter { !$0.isBuiltIn && !$0.isVirtual && $0.isOnline && $0.isEnabled }
         return externals.first { $0.isMain } ?? externals.first
     }
 
@@ -380,8 +387,9 @@ public final class AppController: ObservableObject {
     public func setBuiltInDisplayEnabled(_ enabled: Bool) {
         isBusySwitching = true
         let manager = displayManager
-        let target = primaryExternalDisplay
+        let cachedTarget = primaryExternalDisplay
         displayQueue.async { [weak self] in
+            let target = cachedTarget ?? Self.primaryExternalDisplay(in: manager.getOnlineDisplays())
             let result = Result { try manager.setBuiltInDisplayEnabled(enabled) }
             Task { @MainActor in
                 guard let self else { return }

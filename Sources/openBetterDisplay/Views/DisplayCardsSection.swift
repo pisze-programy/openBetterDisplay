@@ -6,7 +6,7 @@ struct DisplayCardsSection: View {
     @ObservedObject var controller: AppController
 
     private var orderedDisplays: [DisplayInfo] {
-        let visible = controller.displays.filter { $0.isBuiltIn || $0.isOnline || $0.isEnabled }
+        let visible = controller.displays.filter { !$0.isVirtual && ($0.isBuiltIn || $0.isOnline || $0.isEnabled) }
         return visible.sorted { lhs, rhs in
             if lhs.isBuiltIn != rhs.isBuiltIn { return lhs.isBuiltIn }
             return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending

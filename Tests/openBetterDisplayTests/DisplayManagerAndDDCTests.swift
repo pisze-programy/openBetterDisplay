@@ -352,7 +352,31 @@ final class DisplayManagerHelperTests: XCTestCase {
         XCTAssertFalse(DisplayManager.canDisableBuiltIn(displays: [display(1, builtIn: true)]))
         XCTAssertFalse(DisplayManager.canDisableBuiltIn(displays: [display(1, builtIn: true), display(2, builtIn: false, enabled: false)]))
         XCTAssertFalse(DisplayManager.canDisableBuiltIn(displays: [display(1, builtIn: true), display(2, builtIn: false, online: false)]))
+        let virtualPlaceholder = DisplayInfo(
+            id: 11,
+            identifier: DisplayIdentifier(vendorNumber: 0x756E6B6E, modelNumber: 0x76697274),
+            name: "Display 11",
+            isBuiltIn: false,
+            isVirtual: true,
+            isMain: true,
+            isOnline: true,
+            isEnabled: true
+        )
+        XCTAssertFalse(DisplayManager.canDisableBuiltIn(displays: [display(1, builtIn: true), virtualPlaceholder]))
         XCTAssertTrue(DisplayManager.canDisableBuiltIn(displays: [display(1, builtIn: true), display(2, builtIn: false)]))
+    }
+
+    func testVirtualDisplayDetection() {
+        // WindowServer headless placeholder ('unkn' / 'virt')
+        XCTAssertTrue(DisplayManager.isVirtualDisplay(vendor: 0x756E6B6E, model: 0x76697274, isVirtualDeviceFlag: false))
+        // Invalid / unbacked display IDs (0xFFFFFFFF or 0/0)
+        XCTAssertTrue(DisplayManager.isVirtualDisplay(vendor: UInt32.max, model: UInt32.max, isVirtualDeviceFlag: false))
+        XCTAssertTrue(DisplayManager.isVirtualDisplay(vendor: 0, model: 0, isVirtualDeviceFlag: false))
+        // CoreDisplay kCGDisplayIsVirtualDevice == true
+        XCTAssertTrue(DisplayManager.isVirtualDisplay(vendor: 19501, model: 28754, isVirtualDeviceFlag: true))
+        // Real physical monitors (Samsung LC49G95T, Apple Built-in)
+        XCTAssertFalse(DisplayManager.isVirtualDisplay(vendor: 19501, model: 28754, isVirtualDeviceFlag: false))
+        XCTAssertFalse(DisplayManager.isVirtualDisplay(vendor: 1552, model: 41038, isVirtualDeviceFlag: false))
     }
 
     func testNormalizedRotation() {
